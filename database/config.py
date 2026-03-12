@@ -21,12 +21,6 @@ DATABASE_URL = URL.create(
     database=db_name,
 )
 
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(DATABASE_URL, echo=False)
 
 Base = declarative_base()
-
-print("MYSQL_USER =", db_user)
-print("MYSQL_HOST =", db_host)
-print("MYSQL_PORT =", db_port)
-print("MYSQL_DATABASE =", db_name)
-print("MYSQL_PASSWORD défini =", db_password is not None)
