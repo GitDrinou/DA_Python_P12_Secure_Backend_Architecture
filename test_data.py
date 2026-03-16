@@ -1,47 +1,49 @@
 from datetime import datetime, timezone
 from decimal import Decimal
-from database.models import User, Customer, UserRole, Contract, Event
+from database.models import Employee, Customer, EmployeeRole, Contract, Event
 from database.session import SessionLocal
 import database.models as models
 
 session = SessionLocal()
 
-# Create a sales user
-existing_sales_user = session.query(User).filter_by(
+# Create a sales employee
+existing_sales_employee = session.query(Employee).filter_by(
     email="b.boquet@epic.com").first()
 
-if not existing_sales_user:
-    sales_user = models.User(
+if not existing_sales_employee:
+    sales_employee = models.Employee(
         full_name="Bill Boquet",
         email="b.boquet@epic.com",
         password_hash="hashed_password",
-        role=UserRole.SALES
+        role=EmployeeRole.SALES
     )
 
-    session.add(sales_user)
+    session.add(sales_employee)
     session.commit()
 else:
-    print("Sales user already exists")
+    print("Sales employee already exists")
 
-# Create a support user
-existing_support_user = session.query(User).filter_by(
+# Create a support employee
+existing_support_employee = session.query(Employee).filter_by(
     email="k.astroff@epic.com").first()
 
-if not existing_support_user:
-    support_user = models.User(
+if not existing_support_employee:
+    support_employee = models.Employee(
         full_name="Kat Astroff",
         email="k.astroff@epic.com",
         password_hash="hashed_password",
-        role=UserRole.SUPPORT
+        role=EmployeeRole.SUPPORT
     )
 
-    session.add(support_user)
+    session.add(support_employee)
     session.commit()
 else:
-    print("Sales user already exists")
+    print("Sales employee already exists")
 
 # Create a customer
-sales = session.query(User).filter(User.role == UserRole.SALES).first()
+sales = (session.query(Employee)
+         .filter(Employee.role == EmployeeRole.SALES)
+         .first())
 existing_customer = session.query(Customer).filter_by(
     email="jessie983@mail.com").first()
 
@@ -72,7 +74,9 @@ session.commit()
 
 # Create an event
 contract = session.query(Contract).first()
-support = session.query(User).filter(User.role == UserRole.SUPPORT).first()
+support = (session.query(Employee)
+           .filter(Employee.role == EmployeeRole.SUPPORT)
+           .first())
 event = models.Event(
     title="Annual Conference",
     end_date=datetime(2026, 6, 10, 18, 0, tzinfo=timezone.utc),
