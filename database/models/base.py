@@ -1,15 +1,5 @@
-import uuid
 from datetime import datetime, timezone
-
-from sqlalchemy import Column, String, DateTime
-
-
-class UUIDPrimaryKeyMixin:
-    id = Column(
-        String(36),
-        primary_key=True,
-        default=lambda: str(uuid.uuid4())
-    )
+from sqlalchemy import Column, DateTime
 
 
 class TimestampMixin:
