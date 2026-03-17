@@ -36,7 +36,7 @@ class Event(TimestampMixin, Base):
     support_id = Column(
         String(36),
         ForeignKey("employees.employee_id"),
-        nullable=False
+        nullable=True
     )
 
     contract = relationship("Contract", back_populates="events")
