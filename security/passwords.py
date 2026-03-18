@@ -14,7 +14,7 @@ def hash_password(plain_password):
     return password_hasher.hash(plain_password)
 
 
-def verify_password(hashed_password, plain_password ):
+def verify_password(hashed_password, plain_password):
     try:
         return password_hasher.verify(hashed_password, plain_password)
     except VerifyMismatchError:

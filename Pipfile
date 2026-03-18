@@ -10,6 +10,7 @@ pymysql = "*"
 python-dotenv = "*"
 cryptography = "*"
 argon2-cffi = "*"
+pyjwt = "*"
 
 [dev-packages]
 pytest = "*"
