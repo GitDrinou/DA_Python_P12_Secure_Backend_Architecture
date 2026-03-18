@@ -9,6 +9,7 @@ flake8 = "*"
 pymysql = "*"
 python-dotenv = "*"
 cryptography = "*"
+argon2-cffi = "*"
 
 [dev-packages]
 pytest = "*"
