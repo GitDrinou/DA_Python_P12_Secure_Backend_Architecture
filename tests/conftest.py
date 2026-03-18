@@ -4,6 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import database.models  # noqa: F401
 from database.test_config import test_engine, TestSessionLocal
 from database.config import Base
+from security import jwt_handler
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -140,3 +141,13 @@ def contract(db_session, customer):
     db_session.commit()
     db_session.refresh(contract)
     return contract
+
+
+@pytest.fixture(autouse=True)
+def patch_jwt_settings(monkeypatch):
+    monkeypatch.setattr(jwt_handler, "JWT_SECRET_KEY",
+                        "super-secret-test-key-very-long-32-bytes-minimum")
+    monkeypatch.setattr(jwt_handler, "JWT_ALGORITHM", "HS256")
+    monkeypatch.setattr(jwt_handler, "JWT_ISSUER", "epic-events-crm-test")
+    monkeypatch.setattr(jwt_handler, "ACCESS_TOKEN_EXPIRE_MINUTES", 15)
+    monkeypatch.setattr(jwt_handler, "REFRESH_TOKEN_EXPIRE_DAYS", 7)

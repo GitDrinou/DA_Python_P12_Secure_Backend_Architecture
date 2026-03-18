@@ -75,7 +75,7 @@ def decode_token(token):
 
 
 def refresh_access_token(refresh_token, employee):
-    payload = _build_payload(refresh_token)
+    payload = decode_token(refresh_token)
 
     if payload.get("type") != "refresh":
         raise TokenError("Given token is not a refresh token")
