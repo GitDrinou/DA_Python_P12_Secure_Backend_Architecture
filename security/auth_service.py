@@ -1,6 +1,6 @@
 from sqlalchemy.orm import joinedload
 
-from database.models import Employee
+from database.models import Employee, Role
 from security.jwt_handler import create_access_token, create_refresh_token
 from security.passwords import verify_password
 
@@ -12,7 +12,7 @@ class AuthenticationError(Exception):
 def login(db, email, plain_password):
     employee = (
         db.query(Employee)
-        .options(joinedload(Employee.role))
+        .options(joinedload(Employee.role). joinedload(Role.permissions))
         .filter(Employee.email == email)
         .first()
     )

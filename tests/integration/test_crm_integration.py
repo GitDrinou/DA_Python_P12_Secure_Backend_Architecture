@@ -11,7 +11,7 @@ def test_create_full_crm_flow(db_session):
         Check the crm flow
         role -> employee -> customer -> contract -> event
     """
-    sales_role = Role(name="sales")
+    sales_role = Role(name="commercial")
     support_role = Role(name="support")
     db_session.add_all([sales_role, support_role])
     db_session.commit()
