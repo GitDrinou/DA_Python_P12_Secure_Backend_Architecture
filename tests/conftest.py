@@ -5,6 +5,7 @@ import database.models  # noqa: F401
 from database.test_config import test_engine, TestSessionLocal
 from database.config import Base
 from security import jwt_handler
+from security.passwords import hash_password
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -52,6 +53,17 @@ def db_session():
             except Exception:
                 trans.rollback()
                 raise
+
+
+@pytest.fixture(scope="function")
+def management_role(db_session):
+    from database.models import Role
+
+    role = Role(name="gestion")
+    db_session.add(role)
+    db_session.commit()
+    db_session.refresh(role)
+    return role
 
 
 @pytest.fixture(scope="function")
@@ -151,3 +163,47 @@ def patch_jwt_settings(monkeypatch):
     monkeypatch.setattr(jwt_handler, "JWT_ISSUER", "epic-events-crm-test")
     monkeypatch.setattr(jwt_handler, "ACCESS_TOKEN_EXPIRE_MINUTES", 15)
     monkeypatch.setattr(jwt_handler, "REFRESH_TOKEN_EXPIRE_DAYS", 7)
+
+
+@pytest.fixture(scope="function")
+def employee_with_password(db_session, role_sales):
+    from database.models import Employee
+
+    plain_password = "MonMotDePasse123!"
+    employee = Employee(
+        full_name="Alice Martin",
+        email="alice@example.com",
+        password_hash=hash_password(plain_password),
+        is_active=True,
+        role_id=role_sales.role_id,
+    )
+    db_session.add(employee)
+    db_session.commit()
+    db_session.refresh(employee)
+
+    return {
+        "employee": employee,
+        "plain_password": plain_password,
+    }
+
+
+@pytest.fixture(scope="function")
+def inactive_employee_with_password(db_session, role_sales):
+    from database.models import Employee
+
+    plain_password = "MonMotDePasse123!"
+    employee = Employee(
+        full_name="Alice Inactive",
+        email="inactive@example.com",
+        password_hash=hash_password(plain_password),
+        is_active=False,
+        role_id=role_sales.role_id,
+    )
+    db_session.add(employee)
+    db_session.commit()
+    db_session.refresh(employee)
+
+    return {
+        "employee": employee,
+        "plain_password": plain_password,
+    }

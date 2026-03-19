@@ -12,7 +12,7 @@ class AuthenticationError(Exception):
 def login(db, email, plain_password):
     employee = (
         db.query(Employee)
-        .options(joinedload(Employee.role). joinedload(Role.permissions))
+        .options(joinedload(Employee.role).joinedload(Role.permissions))
         .filter(Employee.email == email)
         .first()
     )
@@ -21,7 +21,7 @@ def login(db, email, plain_password):
         raise AuthenticationError("Invalid email or password")
 
     if not employee.is_active:
-        raise AuthenticationError("User is not active")
+        raise AuthenticationError("Employee is not active")
 
     if not verify_password(employee.password_hash, plain_password):
         raise AuthenticationError("Invalid password")
