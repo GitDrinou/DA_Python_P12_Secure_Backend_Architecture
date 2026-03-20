@@ -2,6 +2,11 @@ from sqlalchemy.orm import joinedload
 
 from database.models import Employee, Role
 from security.jwt_handler import decode_token
+from security.permissions import PERM_CUSTOMERS_UPDATE_OWNED, \
+    PERM_CONTRACTS_UPDATE_ALL, \
+    PERM_EVENTS_CREATE_FOR_SIGNED_CONTRACT_OWNED_CUSTOMERS, \
+    PERM_EVENTS_ASSIGN_SUPPORT, PERM_EVENTS_UPDATE_ASSIGNED, \
+    PERM_EVENTS_FILTER_WITHOUT_SUPPORT, PERM_EVENTS_FILTER_ASSIGNED_TO_ME
 
 
 class AuthorizationError(Exception):
@@ -46,17 +51,17 @@ def require_permission(employee, permission_code):
 
 def can_update_customer(employee, customer):
     return (
-        has_permission(employee, "customers.update_owned")
+        has_permission(employee, PERM_CUSTOMERS_UPDATE_OWNED)
         and customer.sales_id == employee.employee_id
     )
 
 
 def can_update_contract(employee, contract):
-    if has_permission(employee, "contracts.update_all"):
+    if has_permission(employee, PERM_CONTRACTS_UPDATE_ALL):
         return True
 
     return (
-        has_permission(employee, "contracts.update_owned_customers")
+        has_permission(employee, PERM_CUSTOMERS_UPDATE_OWNED)
         and contract.customer.sales_id == employee.employee_id
     )
 
@@ -65,7 +70,7 @@ def can_create_event(employee, contract):
     return (
         has_permission(
             employee,
-            "events.create_for_signed_contract_owned_customers",
+            PERM_EVENTS_CREATE_FOR_SIGNED_CONTRACT_OWNED_CUSTOMERS,
         )
         and contract.is_signed is True
         and contract.customer.sales_id == employee.employee_id
@@ -73,18 +78,18 @@ def can_create_event(employee, contract):
 
 
 def can_update_event(employee, event):
-    if has_permission(employee, "events.assign_support"):
+    if has_permission(employee, PERM_EVENTS_ASSIGN_SUPPORT):
         return True
 
     return (
-        has_permission(employee, "events.update_assigned")
+        has_permission(employee, PERM_EVENTS_UPDATE_ASSIGNED)
         and event.support_id == employee.employee_id
     )
 
 
 def can_filter_events_without_support(employee):
-    return has_permission(employee, "events.filter_without_support")
+    return has_permission(employee, PERM_EVENTS_FILTER_WITHOUT_SUPPORT)
 
 
 def can_filter_my_events(employee) -> bool:
-    return has_permission(employee, "events.filter_assigned_to_me")
+    return has_permission(employee, PERM_EVENTS_FILTER_ASSIGNED_TO_ME)

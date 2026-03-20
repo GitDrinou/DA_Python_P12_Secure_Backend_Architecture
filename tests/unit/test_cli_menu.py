@@ -2,6 +2,7 @@ from cli.menu import build_menu_for_employee
 from database.models import Role, Employee
 from security import seed_rbac
 from security.passwords import hash_password
+from security.permissions import ROLE_SALES, ROLE_MANAGEMENT
 
 
 def _create_employee(db_session, role_name, email):
@@ -23,7 +24,7 @@ def _create_employee(db_session, role_name, email):
 
 def test_build_menu_for_commercial(db_session):
     seed_rbac(db_session)
-    employee = _create_employee(db_session, "commercial", "sales@example.com")
+    employee = _create_employee(db_session, ROLE_SALES, "sales@example.com")
 
     menu = build_menu_for_employee(employee)
     labels = {item["label"] for item in menu}
@@ -37,7 +38,11 @@ def test_build_menu_for_commercial(db_session):
 
 def test_build_menu_for_management(db_session):
     seed_rbac(db_session)
-    employee = _create_employee(db_session, "gestion", "gestion@mail.com")
+    employee = _create_employee(
+        db_session,
+        ROLE_MANAGEMENT,
+        "gestion@mail.com"
+    )
 
     menu = build_menu_for_employee(employee)
     labels = {item["label"] for item in menu}

@@ -1,7 +1,14 @@
 from decimal import Decimal
 from datetime import datetime, timezone, timedelta
-
 from database.models import Role, Employee, Customer, Contract, Event
+from security.permissions import (
+    PERM_CUSTOMERS_READ_ALL,
+    PERM_CUSTOMERS_UPDATE_OWNED,
+    PERM_EMPLOYEES_DELETE,
+    ROLE_MANAGEMENT,
+    ROLE_SALES,
+    ROLE_SUPPORT
+)
 from security.rbac import seed_rbac
 from security.authorization import (
     has_permission,
@@ -94,14 +101,14 @@ def test_has_permission_returns_true_for_role_permission(db_session):
 
     commercial = _create_employee(
         db_session,
-        role_name="commercial",
+        role_name=ROLE_SALES,
         full_name="Alice Sales",
         email="alice.sales@mail.com",
     )
 
-    assert has_permission(commercial, "customers.read_all") is True
-    assert has_permission(commercial, "customers.update_owned") is True
-    assert has_permission(commercial, "employees.delete") is False
+    assert has_permission(commercial, PERM_CUSTOMERS_READ_ALL) is True
+    assert has_permission(commercial, PERM_CUSTOMERS_UPDATE_OWNED) is True
+    assert has_permission(commercial, PERM_EMPLOYEES_DELETE) is False
 
 
 def test_sales_can_update_only_owned_customer(db_session):
@@ -109,13 +116,13 @@ def test_sales_can_update_only_owned_customer(db_session):
 
     alice = _create_employee(
         db_session,
-        "commercial",
+        ROLE_SALES,
         "Alice Sales",
         "alice@mail.com"
     )
     bob = _create_employee(
         db_session,
-        "commercial",
+        ROLE_SALES,
         "Bob Sales",
         "bob@mail.com"
     )
@@ -140,13 +147,13 @@ def test_management_can_update_any_contract(db_session):
 
     manager = _create_employee(
         db_session,
-        "gestion",
+        ROLE_MANAGEMENT,
         "Manager",
         "manager@mail.com"
     )
     sales = _create_employee(
         db_session,
-        "commercial",
+        ROLE_SALES,
         "Alice Sales",
         "alice2@mail.com"
     )
@@ -166,13 +173,13 @@ def test_sales_can_update_only_owned_customer_contract(db_session):
 
     alice = _create_employee(
         db_session,
-        "commercial",
+        ROLE_SALES,
         "Alice Sales",
         "alice3@mail.com"
     )
     bob = _create_employee(
         db_session,
-        "commercial",
+        ROLE_SALES,
         "Bob Sales",
         "bob3@mail.com"
     )
@@ -196,13 +203,13 @@ def test_sales_can_create_event_only_for_signed_owned_contract(db_session):
 
     alice = _create_employee(
         db_session,
-        "commercial",
+        ROLE_SALES,
         "Alice Sales",
         "alice4@mail.com"
     )
     bob = _create_employee(
         db_session,
-        "commercial",
+        ROLE_SALES,
         "Bob Sales",
         "bob4@mail.com"
     )
@@ -242,19 +249,19 @@ def test_support_can_update_only_assigned_event(db_session):
 
     sales = _create_employee(
         db_session,
-        "commercial",
+        ROLE_SALES,
         "Sales",
         "sales@mail.com"
     )
     support_a = _create_employee(
         db_session,
-        "support",
+        ROLE_SUPPORT,
         "Support A",
         "support.a@mail.com"
     )
     support_b = _create_employee(
         db_session,
-        "support",
+        ROLE_SUPPORT,
         "Support B",
         "support.b@mail.com"
     )
@@ -275,19 +282,19 @@ def test_management_can_assign_support_on_any_event(db_session):
 
     manager = _create_employee(
         db_session,
-        "gestion",
+        ROLE_MANAGEMENT,
         "Manager",
         "manager2@mail.com"
     )
     sales = _create_employee(
         db_session,
-        "commercial",
+        ROLE_SALES,
         "Sales",
         "sales2@mail.com"
     )
     support = _create_employee(
         db_session,
-        "support",
+        ROLE_SUPPORT,
         "Support",
         "support@mail.com"
     )

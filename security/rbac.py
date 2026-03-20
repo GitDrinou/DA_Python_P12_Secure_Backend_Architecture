@@ -1,57 +1,6 @@
 from database.models import Role, Permission
 from sqlalchemy import select
-
-
-COMMON_PERMISSIONS = {
-    "customers.read_all": "Lire tous les clients",
-    "contracts.read_all": "Lire tous les contrats",
-    "events.read_all": "Lire tous les événements",
-}
-
-MANAGEMENT_PERMISSIONS = {
-    "employees.read_all": "Lire tous les collaborateurs",
-    "employees.create": "Créer un collaborateur",
-    "employees.update": "Mettre à jour un collaborateur",
-    "employees.delete": "Supprimer un collaborateur",
-    "contracts.create_all": "Créer tous les contrats",
-    "contracts.update_all": "Modifier tous les contrats",
-    "events.filter_without_support": (
-        "Filtrer les événements sans contact support"),
-    "events.assign_support": "Assigner un contact support à un événement",
-}
-
-SALES_PERMISSIONS = {
-    "customers.create_owned": (
-        "Créer un client rattaché au commercial connecté"),
-    "customers.update_owned": "Modifier ses propres clients",
-    "contracts.update_owned_customers": (
-        "Modifier les contrats dont le commercial est responsable"),
-    "contracts.filter_unsigned_or_unpaid": (
-        "Filtrer les contrats non signés ou non totalement payés"),
-    "events.create_for_signed_contract_owned_customers": (
-        "Créer un événement pour un contrat signé par un client du commercial"
-    ),
-}
-
-SUPPORT_PERMISSIONS = {
-    "events.filter_assigned_to_me": (
-        "Filtrer les événements attribué au support connecté"),
-    "events.update_assigned": (
-        "Modifier les événements attribués au support connecté"),
-}
-
-ALL_PERMISSIONS = {
-    **COMMON_PERMISSIONS,
-    **MANAGEMENT_PERMISSIONS,
-    **SALES_PERMISSIONS,
-    **SUPPORT_PERMISSIONS,
-}
-
-ROLE_PERMISSION_MAPPER = {
-    "gestion": set(COMMON_PERMISSIONS) | set(MANAGEMENT_PERMISSIONS),
-    "commercial": set(COMMON_PERMISSIONS) | set(SALES_PERMISSIONS),
-    "support": set(COMMON_PERMISSIONS) | set(SUPPORT_PERMISSIONS),
-}
+from security.permissions import ALL_PERMISSIONS, ROLE_PERMISSION_MAPPER
 
 
 def seed_rbac(session):

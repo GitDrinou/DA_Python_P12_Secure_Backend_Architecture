@@ -1,6 +1,13 @@
 from sqlalchemy import select
 from database.models import Role, Permission
-from security.rbac import seed_rbac, ALL_PERMISSIONS, ROLE_PERMISSION_MAPPER
+from security.rbac import seed_rbac
+from security.permissions import (
+    ROLE_MANAGEMENT,
+    ROLE_SALES,
+    ROLE_SUPPORT,
+    ALL_PERMISSIONS,
+    ROLE_PERMISSION_MAPPER
+)
 
 
 def test_seed_rbac_creates_roles_and_permissions(db_session):
@@ -12,7 +19,7 @@ def test_seed_rbac_creates_roles_and_permissions(db_session):
     role_names = {role.name for role in roles}
     permission_codes = {permission.code for permission in permissions}
 
-    assert role_names == {"gestion", "commercial", "support"}
+    assert role_names == {ROLE_MANAGEMENT, ROLE_SALES, ROLE_SUPPORT}
     assert permission_codes == set(ALL_PERMISSIONS.keys())
 
 
