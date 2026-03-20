@@ -1,41 +1,19 @@
-import os
-from pathlib import Path
-from dotenv import load_dotenv
 from sqlalchemy import create_engine, URL
 from sqlalchemy.orm import declarative_base
+from core.settings import get_settings
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-
-def load_environment(env_file: str = ".env") -> None:
-    """ Load environment variables from given file"""
-    env_path = BASE_DIR / env_file
-    if not env_path.exists():
-        raise FileNotFoundError(f"Environment file not found: {env_path}")
-    load_dotenv(env_path, override=True)
-
-
-def build_database_url(env_file: str = ".env"):
+def build_database_url(env_file=".env"):
     """ Build SQLAlchemy database url from given file"""
-    load_environment(env_file)
-
-    db_user = os.getenv("MYSQL_USER")
-    db_password = os.getenv("MYSQL_USER_PASSWORD")
-    db_host = os.getenv("MYSQL_HOST", "localhost")
-    db_port = int(os.getenv("MYSQL_PORT", "3306"))
-    db_name = os.getenv("MYSQL_DATABASE")
-
-    if not all([db_user, db_password, db_name]):
-        raise ValueError("environment variables not set")
+    settings = get_settings(env_file).database
 
     return URL.create(
         drivername="mysql+pymysql",
-        username=db_user,
-        password=db_password,
-        host=db_host,
-        port=db_port,
-        database=db_name,
+        username=settings.user,
+        password=settings.password,
+        host=settings.host,
+        port=settings.port,
+        database=settings.name,
     )
 
 

@@ -34,7 +34,11 @@ def test_run_main_menu_logs_out(monkeypatch, db_session, tmp_path):
     from security import session_store
 
     monkeypatch.setattr(session_store, "SESSION_DIR", tmp_path)
-    monkeypatch.setattr(session_store, "SESSION_FILE", tmp_path / "session.json")
+    monkeypatch.setattr(
+        session_store,
+        "SESSION_FILE",
+        tmp_path / "session.json"
+    )
 
     seed_rbac(db_session)
     employee = _create_employee(db_session, "support", "support3@mail.com")

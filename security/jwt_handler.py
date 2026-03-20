@@ -1,16 +1,16 @@
-import os
 import uuid
 import jwt
 from datetime import datetime, timezone, timedelta
-
 from jwt import ExpiredSignatureError, InvalidTokenError
+from core.settings import get_settings
 
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
-JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-JWT_ISSUER = os.getenv("JWT_ISSUER", "epic-events-crm")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES",
-                                            "15"))
-REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
+
+JWT_SETTINGS = get_settings().jwt
+JWT_SECRET_KEY = JWT_SETTINGS.secret_key
+JWT_ALGORITHM = JWT_SETTINGS.algorithm
+JWT_ISSUER = JWT_SETTINGS.issuer
+ACCESS_TOKEN_EXPIRE_MINUTES = JWT_SETTINGS.access_token_expire_minutes
+REFRESH_TOKEN_EXPIRE_DAYS = JWT_SETTINGS.refresh_token_expire_days
 
 
 class TokenError(Exception):

@@ -33,4 +33,3 @@ def test_authenticate_employee_returns_authenticaded_employee(
     assert saved_session is not None
     assert "access_token" in saved_session
     assert "refresh_token" in saved_session
-

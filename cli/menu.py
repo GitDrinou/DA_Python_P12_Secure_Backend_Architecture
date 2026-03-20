@@ -58,6 +58,7 @@ MENU_ITEMS = [
     }
 ]
 
+
 def build_menu_for_employee(employee):
     visible_items = []
 

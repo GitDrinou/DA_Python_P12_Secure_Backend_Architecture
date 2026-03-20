@@ -1,9 +1,10 @@
 import json
 import os
-from pathlib import Path
+from core.settings import get_settings
 
-SESSION_DIR = Path.home() / ".epic_events_crm"
-SESSION_FILE = SESSION_DIR / "sessions.json"
+SESSION_SETTINGS = get_settings().session
+SESSION_DIR = SESSION_SETTINGS.directory
+SESSION_FILE = SESSION_SETTINGS.file_path
 
 
 def save_session(access_token, refresh_token):

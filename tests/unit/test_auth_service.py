@@ -19,7 +19,10 @@ def test_login_rejects_unknown_email(db_session):
         login(db_session, "unknown@example.com", "secret")
 
 
-def test_login_rejects_inactive_user(db_session, inactive_employee_with_password):
+def test_login_rejects_inactive_user(
+        db_session,
+        inactive_employee_with_password
+):
     employee = inactive_employee_with_password["employee"]
     plain_password = inactive_employee_with_password["plain_password"]
 
@@ -32,7 +35,3 @@ def test_login_rejects_invalid_password(db_session, employee_with_password):
 
     with pytest.raises(AuthenticationError, match="Invalid password"):
         login(db_session, employee.email, "bad-password")
-
-
-
-

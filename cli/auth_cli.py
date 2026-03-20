@@ -16,4 +16,3 @@ def authenticate_employee(db_session, email, password):
     )
 
     return employee
-
