@@ -1,6 +1,3 @@
-from decimal import Decimal
-from datetime import datetime, timezone, timedelta
-from database.models import Role, Employee, Customer, Contract, Event
 from security.permissions import (
     PERM_CUSTOMERS_READ_ALL,
     PERM_CUSTOMERS_UPDATE_OWNED,
@@ -17,89 +14,18 @@ from security.authorization import (
     can_create_event,
     can_update_event
 )
-
-
-def _get_role(db_session, role_name):
-    return db_session.query(Role).filter(Role.name == role_name).first()
-
-
-def _create_employee(db_session, role_name, full_name, email):
-    role = _get_role(db_session, role_name)
-    employee = Employee(
-        full_name=full_name,
-        email=email,
-        password_hash="hashed_password",
-        is_active=True,
-        role_id=role.role_id,
-    )
-
-    db_session.add(employee)
-    db_session.commit()
-    db_session.refresh(employee)
-
-    return employee
-
-
-def _create_customer(db_session, sales_employee, email="customer@mail.com"):
-    customer = Customer(
-        full_name="Client Test",
-        email=email,
-        phone="0601020304",
-        company_name="ACME",
-        sales_id=sales_employee.employee_id,
-    )
-
-    db_session.add(customer)
-    db_session.commit()
-    db_session.refresh(customer)
-
-    return customer
-
-
-def _create_contract(
-    db_session,
-    customer,
-    is_signed=False,
-    total="1000.00",
-    remaining="1000.00",
-):
-    contract = Contract(
-        total_amount=Decimal(total),
-        remaining_amount=Decimal(remaining),
-        is_signed=is_signed,
-        customers_id=customer.customer_id,
-    )
-
-    db_session.add(contract)
-    db_session.commit()
-    db_session.refresh(contract)
-
-    return contract
-
-
-def _create_event(db_session, contract, support_employee=None):
-    event = Event(
-        title="Salon",
-        start_date=datetime.now(timezone.utc),
-        end_date=datetime.now(timezone.utc) + timedelta(hours=4),
-        location="Paris",
-        attendees=50,
-        notes="Test event",
-        contract_id=contract.contract_id,
-        support_id=support_employee.employee_id if support_employee else None,
-    )
-
-    db_session.add(event)
-    db_session.commit()
-    db_session.refresh(event)
-
-    return event
+from tests.factories import (
+    create_employee,
+    create_customer,
+    create_contract,
+    create_event
+)
 
 
 def test_has_permission_returns_true_for_role_permission(db_session):
     seed_rbac(db_session)
 
-    commercial = _create_employee(
+    commercial = create_employee(
         db_session,
         role_name=ROLE_SALES,
         full_name="Alice Sales",
@@ -114,25 +40,25 @@ def test_has_permission_returns_true_for_role_permission(db_session):
 def test_sales_can_update_only_owned_customer(db_session):
     seed_rbac(db_session)
 
-    alice = _create_employee(
+    alice = create_employee(
         db_session,
         ROLE_SALES,
         "Alice Sales",
         "alice@mail.com"
     )
-    bob = _create_employee(
+    bob = create_employee(
         db_session,
         ROLE_SALES,
         "Bob Sales",
         "bob@mail.com"
     )
 
-    alice_customer = _create_customer(
+    alice_customer = create_customer(
         db_session,
         alice,
         email="alice.customer@mail.com"
     )
-    bob_customer = _create_customer(
+    bob_customer = create_customer(
         db_session,
         bob,
         email="bob.customer@mail.com"
@@ -145,25 +71,25 @@ def test_sales_can_update_only_owned_customer(db_session):
 def test_management_can_update_any_contract(db_session):
     seed_rbac(db_session)
 
-    manager = _create_employee(
+    manager = create_employee(
         db_session,
         ROLE_MANAGEMENT,
         "Manager",
         "manager@mail.com"
     )
-    sales = _create_employee(
+    sales = create_employee(
         db_session,
         ROLE_SALES,
         "Alice Sales",
         "alice2@mail.com"
     )
 
-    customer = _create_customer(
+    customer = create_customer(
         db_session,
         sales,
         email="contract.owner@mail.com"
     )
-    contract = _create_contract(db_session, customer)
+    contract = create_contract(db_session, customer)
 
     assert can_update_contract(manager, contract) is True
 
@@ -171,28 +97,28 @@ def test_management_can_update_any_contract(db_session):
 def test_sales_can_update_only_owned_customer_contract(db_session):
     seed_rbac(db_session)
 
-    alice = _create_employee(
+    alice = create_employee(
         db_session,
         ROLE_SALES,
         "Alice Sales",
         "alice3@mail.com"
     )
-    bob = _create_employee(
+    bob = create_employee(
         db_session,
         ROLE_SALES,
         "Bob Sales",
         "bob3@mail.com"
     )
 
-    alice_customer = _create_customer(
+    alice_customer = create_customer(
         db_session, alice, email="alice.contract@mail.com"
     )
-    bob_customer = _create_customer(
+    bob_customer = create_customer(
         db_session, bob, email="bob.contract@mail.com"
     )
 
-    alice_contract = _create_contract(db_session, alice_customer)
-    bob_contract = _create_contract(db_session, bob_customer)
+    alice_contract = create_contract(db_session, alice_customer)
+    bob_contract = create_contract(db_session, bob_customer)
 
     assert can_update_contract(alice, alice_contract) is True
     assert can_update_contract(alice, bob_contract) is False
@@ -201,39 +127,39 @@ def test_sales_can_update_only_owned_customer_contract(db_session):
 def test_sales_can_create_event_only_for_signed_owned_contract(db_session):
     seed_rbac(db_session)
 
-    alice = _create_employee(
+    alice = create_employee(
         db_session,
         ROLE_SALES,
         "Alice Sales",
         "alice4@mail.com"
     )
-    bob = _create_employee(
+    bob = create_employee(
         db_session,
         ROLE_SALES,
         "Bob Sales",
         "bob4@mail.com"
     )
 
-    alice_customer = _create_customer(
+    alice_customer = create_customer(
         db_session, alice, email="alice.event@mail.com"
     )
-    bob_customer = _create_customer(
+    bob_customer = create_customer(
         db_session, bob, email="bob.event@mail.com"
     )
 
-    signed_owned_contract = _create_contract(
+    signed_owned_contract = create_contract(
         db_session,
         alice_customer,
         is_signed=True
     )
-    unsigned_owned_contract = _create_contract(
+    unsigned_owned_contract = create_contract(
         db_session,
         alice_customer,
         is_signed=False,
         total="2000.00",
         remaining="2000.00",
     )
-    signed_other_contract = _create_contract(
+    signed_other_contract = create_contract(
         db_session,
         bob_customer,
         is_signed=True
@@ -247,31 +173,31 @@ def test_sales_can_create_event_only_for_signed_owned_contract(db_session):
 def test_support_can_update_only_assigned_event(db_session):
     seed_rbac(db_session)
 
-    sales = _create_employee(
+    sales = create_employee(
         db_session,
         ROLE_SALES,
         "Sales",
         "sales@mail.com"
     )
-    support_a = _create_employee(
+    support_a = create_employee(
         db_session,
         ROLE_SUPPORT,
         "Support A",
         "support.a@mail.com"
     )
-    support_b = _create_employee(
+    support_b = create_employee(
         db_session,
         ROLE_SUPPORT,
         "Support B",
         "support.b@mail.com"
     )
 
-    customer = _create_customer(db_session, sales,
-                                email="support.customer@mail.com")
-    contract = _create_contract(db_session, customer, is_signed=True)
+    customer = create_customer(db_session, sales,
+                               email="support.customer@mail.com")
+    contract = create_contract(db_session, customer, is_signed=True)
 
-    event_a = _create_event(db_session, contract, support_employee=support_a)
-    event_b = _create_event(db_session, contract, support_employee=support_b)
+    event_a = create_event(db_session, contract, support_employee=support_a)
+    event_b = create_event(db_session, contract, support_employee=support_b)
 
     assert can_update_event(support_a, event_a) is True
     assert can_update_event(support_a, event_b) is False
@@ -280,28 +206,28 @@ def test_support_can_update_only_assigned_event(db_session):
 def test_management_can_assign_support_on_any_event(db_session):
     seed_rbac(db_session)
 
-    manager = _create_employee(
+    manager = create_employee(
         db_session,
         ROLE_MANAGEMENT,
         "Manager",
         "manager2@mail.com"
     )
-    sales = _create_employee(
+    sales = create_employee(
         db_session,
         ROLE_SALES,
         "Sales",
         "sales2@mail.com"
     )
-    support = _create_employee(
+    support = create_employee(
         db_session,
         ROLE_SUPPORT,
         "Support",
         "support@mail.com"
     )
 
-    customer = _create_customer(db_session, sales,
-                                email="manager.event@mail.com")
-    contract = _create_contract(db_session, customer, is_signed=True)
-    event = _create_event(db_session, contract, support_employee=support)
+    customer = create_customer(db_session, sales,
+                               email="manager.event@mail.com")
+    contract = create_contract(db_session, customer, is_signed=True)
+    event = create_event(db_session, contract, support_employee=support)
 
     assert can_update_event(manager, event) is True
