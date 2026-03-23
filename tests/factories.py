@@ -32,7 +32,7 @@ def get_role(db_session, role_name):
 def create_employee(
     db_session,
     role_name,
-    full_name=None,
+    full_name="Test Employee",
     email=None,
     password="Password123!",
     is_active=True,

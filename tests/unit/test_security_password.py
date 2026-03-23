@@ -6,5 +6,5 @@ def test_password_hash():
     hashed = hash_password(password)
 
     assert hashed != password
-    assert verify_password(hashed, password) is True
+    assert verify_password(password, hashed) is True
     assert verify_password(hashed, "mauvais_mot_de_passe") is False
