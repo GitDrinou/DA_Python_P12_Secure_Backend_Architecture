@@ -26,7 +26,11 @@ def build_parser():
 def main(db_session=None):
     parser = build_parser()
     args = parser.parse_args()
-    db_session = db_session or SessionLocal()
+
+    create_session = False
+    if db_session is None:
+        db_session = SessionLocal()
+        create_session = True
 
     if args.command == "login":
         try:
@@ -41,7 +45,7 @@ def main(db_session=None):
             print(f"[AUTH] {e}")
             return 1
         finally:
-            if db_session is None:
+            if create_session:
                 db_session.close()
 
     if args.command == "logout":

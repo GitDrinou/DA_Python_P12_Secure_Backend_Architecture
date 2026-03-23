@@ -7,8 +7,10 @@ def login_required(func):
     """ Decorator to check if the user is logged in. """
     @wraps(func)
     def wrapper(*args, **kwargs):
-        employee = get_current_employee()
-        return func(*args, current_employee=employee, **kwargs)
+        db_session = kwargs.get("db_session")
+        employee = get_current_employee(db_session=db_session)
+        kwargs["current_employee"] = employee
+        return func(*args, **kwargs)
     return wrapper
 
 
@@ -18,13 +20,15 @@ def permission_required(permission_code):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            employee = get_current_employee()
+            db_session = kwargs.get("db_session")
+            employee = get_current_employee(db_session=db_session)
 
             if not has_permission(employee, permission_code):
                 raise AuthorizationError(
                     f"You don't have permission: {permission_code}"
                 )
-            return func(*args, current_employee=employee, **kwargs)
+            kwargs["current_employee"] = employee
+            return func(*args, **kwargs)
         return wrapper
     return decorator
 

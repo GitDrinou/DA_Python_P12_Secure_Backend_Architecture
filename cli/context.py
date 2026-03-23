@@ -17,7 +17,7 @@ def get_current_session_tokens():
     return session_data
 
 
-def get_current_employee():
+def get_current_employee(db_session=None):
     """ Return employee information """
     session_data = get_current_session_tokens()
     access_token = session_data["access_token"]
@@ -27,14 +27,18 @@ def get_current_employee():
             "Invalide session. Please relogin with: >> epic_events.py login <<"
         )
 
-    db_session = SessionLocal()
+    created_session = False
+    if db_session is None:
+        db_session = SessionLocal()
+        created_session = True
+
     try:
         employee = get_authenticated_employee(db_session, access_token)
-        db_session.expunge(employee)
         return employee
     except AuthorizationError as exception:
         raise CliAuthenticationError(
             f"Expired session or invalid session: {exception}"
         ) from exception
     finally:
-        db_session.close()
+        if created_session:
+            db_session.close()

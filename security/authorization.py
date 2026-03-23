@@ -1,5 +1,4 @@
 from sqlalchemy.orm import joinedload
-
 from database.models import Employee, Role
 from security.jwt_handler import decode_token
 from security.permissions import PERM_CUSTOMERS_UPDATE_OWNED, \

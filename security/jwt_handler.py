@@ -26,7 +26,7 @@ def _build_payload(employee, token_type, expires_delta):
     expire = now + expires_delta
 
     payload = {
-        "sub": employee.employee_id,
+        "sub": str(employee.employee_id),
         "email": employee.email,
         "role": employee.role.name if employee.role else None,
         "type": token_type,
