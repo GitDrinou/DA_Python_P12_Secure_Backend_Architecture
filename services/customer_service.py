@@ -47,7 +47,7 @@ class CustomerService:
         """
         Create new customer
         Args:
-            current_employee (str): employee details
+            current_employee (object)
             full_name (str): customer full name
             email (str): customer email
             phone (str): customer phone number
@@ -94,7 +94,7 @@ class CustomerService:
         """
         Update customer details
         Args:
-           current_employee (str): employee
+           current_employee (object)
            customer_id (str): customer id
            full_name (str): customer full name
            email (str): customer email
@@ -124,7 +124,7 @@ class CustomerService:
         """
         Delete customer by customer id
         Args:
-            current_employee (str): employee id
+            current_employee (object)
             customer_id (str): customer id
         """
         customer = self.get_customer(customer_id)

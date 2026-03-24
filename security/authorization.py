@@ -8,7 +8,7 @@ from security.permissions import (
     PERM_EVENTS_CREATE_FOR_SIGNED_CONTRACT_OWNED_CUSTOMERS,
     PERM_EVENTS_ASSIGN_SUPPORT, PERM_EVENTS_UPDATE_ASSIGNED,
     PERM_EVENTS_FILTER_WITHOUT_SUPPORT,
-    PERM_EVENTS_FILTER_ASSIGNED_TO_ME
+    PERM_EVENTS_FILTER_ASSIGNED_TO_ME, PERM_CONTRACTS_UPDATE_OWNED_CUSTOMERS
 )
 
 
@@ -67,11 +67,15 @@ def can_delete_customer(employee, customer):
 
 
 def can_update_contract(employee, contract):
+    if employee is None or employee.role is None:
+        return False
+
     if has_permission(employee, PERM_CONTRACTS_UPDATE_ALL):
         return True
 
     return (
-        has_permission(employee, PERM_CUSTOMERS_UPDATE_OWNED)
+        has_permission(employee, PERM_CONTRACTS_UPDATE_OWNED_CUSTOMERS)
+        and contract.customer is not None
         and contract.customer.sales_id == employee.employee_id
     )
 
