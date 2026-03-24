@@ -1,11 +1,15 @@
 from sqlalchemy.orm import joinedload
 from database.models import Employee, Role
 from security.jwt_handler import decode_token
-from security.permissions import PERM_CUSTOMERS_UPDATE_OWNED, \
-    PERM_CONTRACTS_UPDATE_ALL, \
-    PERM_EVENTS_CREATE_FOR_SIGNED_CONTRACT_OWNED_CUSTOMERS, \
-    PERM_EVENTS_ASSIGN_SUPPORT, PERM_EVENTS_UPDATE_ASSIGNED, \
-    PERM_EVENTS_FILTER_WITHOUT_SUPPORT, PERM_EVENTS_FILTER_ASSIGNED_TO_ME
+from security.permissions import (
+    PERM_CUSTOMERS_UPDATE_OWNED,
+    PERM_CUSTOMERS_DELETE_OWNED,
+    PERM_CONTRACTS_UPDATE_ALL,
+    PERM_EVENTS_CREATE_FOR_SIGNED_CONTRACT_OWNED_CUSTOMERS,
+    PERM_EVENTS_ASSIGN_SUPPORT, PERM_EVENTS_UPDATE_ASSIGNED,
+    PERM_EVENTS_FILTER_WITHOUT_SUPPORT,
+    PERM_EVENTS_FILTER_ASSIGNED_TO_ME
+)
 
 
 class AuthorizationError(Exception):
@@ -51,6 +55,13 @@ def require_permission(employee, permission_code):
 def can_update_customer(employee, customer):
     return (
         has_permission(employee, PERM_CUSTOMERS_UPDATE_OWNED)
+        and customer.sales_id == employee.employee_id
+    )
+
+
+def can_delete_customer(employee, customer):
+    return (
+        has_permission(employee, PERM_CUSTOMERS_DELETE_OWNED)
         and customer.sales_id == employee.employee_id
     )
 

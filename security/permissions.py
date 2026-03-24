@@ -11,6 +11,7 @@ ROLES = {
 PERM_CUSTOMERS_READ_ALL = "customers.read_all"
 PERM_CUSTOMERS_CREATE_OWNED = "customers.create_owned"
 PERM_CUSTOMERS_UPDATE_OWNED = "customers.update_owned"
+PERM_CUSTOMERS_DELETE_OWNED = "customers.delete_owned"
 
 PERM_CONTRACTS_READ_ALL = "contracts.read_all"
 PERM_CONTRACTS_CREATE_ALL = "contracts.create_all"
@@ -56,6 +57,7 @@ SALES_PERMISSIONS = {
         "Créer un client rattaché au commercial connecté"
     ),
     PERM_CUSTOMERS_UPDATE_OWNED: "Modifier ses propres clients",
+    PERM_CUSTOMERS_DELETE_OWNED: "Supprimer ses propres clients",
     PERM_CONTRACTS_UPDATE_OWNED_CUSTOMERS: (
         "Modifier les contrats dont le commercial est responsable"
     ),

@@ -13,7 +13,7 @@ def build_parser():
 
     subparsers.add_parser("list", help="List employees")
 
-    get_parser = subparsers.add_parser("get", help="Get an employee datas")
+    get_parser = subparsers.add_parser("get", help="Get employee details")
     get_parser.add_argument("--id", required=True)
 
     create_parser = subparsers.add_parser(
@@ -31,7 +31,7 @@ def build_parser():
         help="Update an employee"
     )
     update_parser.add_argument("--id", required=True)
-    update_parser.add_argument("--full_name")
+    update_parser.add_argument("--full-name")
     update_parser.add_argument("--email")
     update_parser.add_argument("--password")
     update_parser.add_argument("--role")

@@ -11,15 +11,16 @@ class EmployeeService:
         """ List all employees """
         return (
             self.db_session.query(Employee)
-            .options(joinedload(Employee.role))
+            .options(joinedload(Employee.role).joinedload(Role.permissions))
             .order_by(Employee.full_name.asc())
             .all()
         )
 
     def get_employee(self, employee_id):
-        """ Get employee by employee id
-            Args:
-                employee_id (str): employee ident
+        """
+        Get employee by employee id
+        Args:
+            employee_id (str): employee ident
         """
         employee = (
             self.db_session.query(Employee)
