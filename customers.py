@@ -31,7 +31,7 @@ def build_parser():
         "update",
         help="Update a customer"
     )
-    update_parser.add_argument("--id", required=True)
+    update_parser.add_argument("--customer-id", required=True)
     update_parser.add_argument("--full-name")
     update_parser.add_argument("--email")
     update_parser.add_argument("--phone")

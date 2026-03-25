@@ -76,10 +76,22 @@ class ContractService:
         if customer is None:
             raise ValueError("Customer not found")
 
+        total_amount = Decimal(str(total_amount))
+        remaining_amount = Decimal(str(remaining_amount))
+
+        if total_amount < 0:
+            raise ValueError("Total amount cannot be negative")
+
+        if remaining_amount < 0:
+            raise ValueError("Remaining amount cannot be negative")
+
+        if remaining_amount > total_amount:
+            raise ValueError("Remaining amount cannot exceed total amount")
+
         contract = Contract(
             customers_id=customer_id,
-            total_amount=Decimal(total_amount),
-            remaining_amount=Decimal(remaining_amount),
+            total_amount=total_amount,
+            remaining_amount=remaining_amount,
             is_signed=is_signed,
         )
 
@@ -109,7 +121,7 @@ class ContractService:
         contract = self.get_contract(contract_id)
 
         if not can_update_contract(current_employee, contract):
-            raise ValueError("You cannot update this contract")
+            raise ValueError("You are not allowed to update this contract")
 
         new_total_amount = (
             Decimal(str(total_amount))
