@@ -7,8 +7,7 @@ from security.permissions import (
     PERM_CONTRACTS_UPDATE_ALL,
     PERM_EVENTS_CREATE_FOR_SIGNED_CONTRACT_OWNED_CUSTOMERS,
     PERM_EVENTS_ASSIGN_SUPPORT, PERM_EVENTS_UPDATE_ASSIGNED,
-    PERM_EVENTS_FILTER_WITHOUT_SUPPORT,
-    PERM_EVENTS_FILTER_ASSIGNED_TO_ME, PERM_CONTRACTS_UPDATE_OWNED_CUSTOMERS
+    PERM_CONTRACTS_UPDATE_OWNED_CUSTOMERS
 )
 
 
@@ -99,11 +98,3 @@ def can_update_event(employee, event):
         has_permission(employee, PERM_EVENTS_UPDATE_ASSIGNED)
         and event.support_id == employee.employee_id
     )
-
-
-def can_filter_events_without_support(employee):
-    return has_permission(employee, PERM_EVENTS_FILTER_WITHOUT_SUPPORT)
-
-
-def can_filter_my_events(employee) -> bool:
-    return has_permission(employee, PERM_EVENTS_FILTER_ASSIGNED_TO_ME)

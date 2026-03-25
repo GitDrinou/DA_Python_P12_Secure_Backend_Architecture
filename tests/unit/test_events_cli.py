@@ -1,121 +1,16 @@
 import sys
 from datetime import datetime, timezone, timedelta
-
-from security.rbac import seed_rbac
 from tests.factories import (
     create_employee,
     create_customer,
     create_contract,
     create_event,
 )
-
-
-def login_as_manager(monkeypatch, db_session, tmp_path):
-    from security import session_store
-    import epic_events
-
-    monkeypatch.setattr(session_store, "SESSION_DIR", tmp_path)
-    monkeypatch.setattr(
-        session_store,
-        "SESSION_FILE",
-        tmp_path / "session.json"
-    )
-
-    seed_rbac(db_session)
-    manager = create_employee(
-        db_session=db_session,
-        role_name="gestion",
-        full_name="Manager Test",
-        email="manager@test.com",
-        password="Password123!",
-    )
-
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "epic_events.py",
-            "login",
-            "--email",
-            manager.email,
-            "--password",
-            "Password123!",
-        ],
-    )
-    epic_events.main(db_session=db_session)
-    return manager
-
-
-def login_as_sales(monkeypatch, db_session, tmp_path):
-    from security import session_store
-    import epic_events
-
-    monkeypatch.setattr(session_store, "SESSION_DIR", tmp_path)
-    monkeypatch.setattr(
-        session_store,
-        "SESSION_FILE",
-        tmp_path / "session.json"
-    )
-
-    seed_rbac(db_session)
-    sales = create_employee(
-        db_session=db_session,
-        role_name="commercial",
-        full_name="Sales Test",
-        email="sales@test.com",
-        password="Password123!",
-    )
-
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "epic_events.py",
-            "login",
-            "--email",
-            sales.email,
-            "--password",
-            "Password123!",
-        ],
-    )
-    epic_events.main(db_session=db_session)
-    return sales
-
-
-def login_as_support(monkeypatch, db_session, tmp_path):
-    from security import session_store
-    import epic_events
-
-    monkeypatch.setattr(session_store, "SESSION_DIR", tmp_path)
-    monkeypatch.setattr(
-        session_store,
-        "SESSION_FILE",
-        tmp_path / "session.json"
-    )
-
-    seed_rbac(db_session)
-    support = create_employee(
-        db_session=db_session,
-        role_name="support",
-        full_name="Support Test",
-        email="support@test.com",
-        password="Password123!",
-    )
-
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "epic_events.py",
-            "login",
-            "--email",
-            support.email,
-            "--password",
-            "Password123!",
-        ],
-    )
-    epic_events.main(db_session=db_session)
-    return support
+from tests.helpers.auth import (
+    login_as_sales,
+    login_as_manager,
+    login_as_support
+)
 
 
 def test_events_list_requires_login(monkeypatch, capsys, tmp_path):

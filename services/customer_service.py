@@ -1,8 +1,6 @@
 from database.models import Customer
 from sqlalchemy.orm import joinedload
-
-from security import can_update_customer
-from security.authorization import can_delete_customer
+from security.authorization import can_update_customer, can_delete_customer
 
 
 class CustomerService:

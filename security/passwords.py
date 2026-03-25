@@ -21,7 +21,3 @@ def verify_password(plain_password, hashed_password):
         return False
     except InvalidHashError:
         return False
-
-
-def needs_rehash(password_hash: str) -> bool:
-    return password_hasher.check_needs_rehash(password_hash)

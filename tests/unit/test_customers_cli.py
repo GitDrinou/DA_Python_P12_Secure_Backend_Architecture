@@ -1,44 +1,5 @@
 import sys
-from security.rbac import seed_rbac
-from tests.factories import create_employee
-
-
-def login_as_sales(monkeypatch, db_session, tmp_path):
-    from security import session_store
-    import epic_events
-
-    monkeypatch.setattr(session_store, "SESSION_DIR", tmp_path)
-    monkeypatch.setattr(
-        session_store,
-        "SESSION_FILE",
-        tmp_path / "session.json"
-    )
-
-    seed_rbac(db_session)
-    sales = create_employee(
-        db_session=db_session,
-        role_name="commercial",
-        full_name="Commercial Test",
-        email="sales@mail.com",
-        password="Password123!"
-    )
-    db_session.flush()
-    db_session.commit()
-
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "epic_events.py",
-            "login",
-            "--email",
-            sales.email,
-            "--password",
-            "Password123!",
-        ],
-    )
-    epic_events.main(db_session=db_session)
-    return sales
+from tests.helpers.auth import login_as_sales
 
 
 def test_customers_list_requires_login(monkeypatch, capsys, tmp_path):
@@ -69,7 +30,7 @@ def test_customers_create_as_sales(
 ):
     import customers
 
-    sales = login_as_sales(monkeypatch, db_session, tmp_path)
+    login_as_sales(monkeypatch, db_session, tmp_path)
 
     monkeypatch.setattr(
         sys,
@@ -80,8 +41,7 @@ def test_customers_create_as_sales(
             "--full-name", "New Customer",
             "--email", "new.customer@test.com",
             "--phone", "123-456-789",
-            "--company-name", "Customer Test SA",
-            "--sales-id", sales.employee_id,
+            "--company-name", "Customer Test SA"
         ],
     )
 

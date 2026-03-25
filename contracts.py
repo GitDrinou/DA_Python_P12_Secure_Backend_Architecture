@@ -84,14 +84,14 @@ def handle_list(args, current_employee=None, db_session=None):
 def handle_get(contract_id, current_employee=None, db_session=None):
     service = ContractService(db_session)
     contract = service.get_contract(contract_id)
-    print_row(contract.to_dict(contract))
+    print_row(contract_to_dict(contract))
     return 0
 
 
 @permission_required(PERM_CONTRACTS_CREATE_ALL)
 def handle_create(args, current_employee=None, db_session=None):
     service = ContractService(db_session)
-    is_signed = False
+    is_signed = None
     if args.is_signed is not None:
         is_signed = args.is_signed == "true"
 
@@ -112,7 +112,7 @@ def handle_create(args, current_employee=None, db_session=None):
 @login_required
 def handle_update(args, current_employee=None, db_session=None):
     service = ContractService(db_session)
-    is_signed = False
+    is_signed = None
     if args.is_signed is not None:
         is_signed = args.is_signed == "true"
 

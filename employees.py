@@ -14,7 +14,7 @@ def build_parser():
     subparsers.add_parser("list", help="List employees")
 
     get_parser = subparsers.add_parser("get", help="Get employee details")
-    get_parser.add_argument("--id", required=True)
+    get_parser.add_argument("--employee-id", required=True)
 
     create_parser = subparsers.add_parser(
         "create",
@@ -30,7 +30,7 @@ def build_parser():
         "update",
         help="Update an employee"
     )
-    update_parser.add_argument("--id", required=True)
+    update_parser.add_argument("--employee-id", required=True)
     update_parser.add_argument("--full-name")
     update_parser.add_argument("--email")
     update_parser.add_argument("--password")
@@ -41,7 +41,7 @@ def build_parser():
         "delete",
         help="Delete an employee"
     )
-    delete_parser.add_argument("--id", required=True)
+    delete_parser.add_argument("--employee-id", required=True)
 
     return parser
 
@@ -96,7 +96,7 @@ def handle_update(args, current_employee=None, db_session=None):
         is_active = args.is_active == "true"
 
     employee = service.update_employee(
-        employee_id=args.id,
+        employee_id=args.employee_id,
         full_name=args.full_name,
         email=args.email,
         password=args.password,
@@ -133,7 +133,7 @@ def main(db_session=None):
             return handle_list(db_session=db_session)
 
         if args.command == "get":
-            return handle_get(args.id, db_session=db_session)
+            return handle_get(args.employee_id, db_session=db_session)
 
         if args.command == "create":
             return handle_create(args, db_session=db_session)
@@ -142,7 +142,7 @@ def main(db_session=None):
             return handle_update(args, db_session=db_session)
 
         if args.command == "delete":
-            return handle_delete(args.id, db_session=db_session)
+            return handle_delete(args.employee_id, db_session=db_session)
 
         return 1
     finally:

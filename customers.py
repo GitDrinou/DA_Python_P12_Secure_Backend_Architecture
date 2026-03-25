@@ -15,7 +15,7 @@ def build_parser():
     subparsers.add_parser("list", help="List all customers")
 
     get_parser = subparsers.add_parser("get", help="Get customer details")
-    get_parser.add_argument("--id", required=True)
+    get_parser.add_argument("--customer-id", required=True)
 
     create_parser = subparsers.add_parser(
         "create",
@@ -25,7 +25,6 @@ def build_parser():
     create_parser.add_argument("--email", required=True)
     create_parser.add_argument("--phone", required=True)
     create_parser.add_argument("--company-name", required=True)
-    create_parser.add_argument("--sales-id", required=True)
 
     update_parser = subparsers.add_parser(
         "update",
@@ -36,13 +35,12 @@ def build_parser():
     update_parser.add_argument("--email")
     update_parser.add_argument("--phone")
     update_parser.add_argument("--company-name")
-    update_parser.add_argument("--sales-id")
 
     delete_parser = subparsers.add_parser(
         "delete",
         help="Delete a customer"
     )
-    delete_parser.add_argument("--id", required=True)
+    delete_parser.add_argument("--customer-id", required=True)
 
     return parser
 
@@ -130,7 +128,7 @@ def main(db_session=None):
             return handle_list(db_session=db_session)
 
         if args.command == "get":
-            return handle_get(args.id, db_session=db_session)
+            return handle_get(args.customer_id, db_session=db_session)
 
         if args.command == "create":
             return handle_create(args, db_session=db_session)
@@ -139,7 +137,7 @@ def main(db_session=None):
             return handle_update(args, db_session=db_session)
 
         if args.command == "delete":
-            return handle_delete(args.id, db_session=db_session)
+            return handle_delete(args.customer_id, db_session=db_session)
 
         return 1
     finally:

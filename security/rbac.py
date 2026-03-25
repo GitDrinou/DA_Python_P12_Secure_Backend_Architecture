@@ -40,7 +40,3 @@ def seed_rbac(session):
 
     session.commit()
     return existing_roles
-
-
-def get_role_permission_codes(role_name):
-    return ROLE_PERMISSION_MAPPER.get(role_name, set())
