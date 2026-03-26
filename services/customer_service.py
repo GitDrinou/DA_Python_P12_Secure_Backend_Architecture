@@ -104,6 +104,18 @@ class CustomerService:
         if not can_update_customer(current_employee, customer):
             raise ValueError("You are not allowed to update customer")
 
+        if email is not None:
+            existing = (
+                self.db_session.query(Customer)
+                .filter(
+                    Customer.email == email,
+                    Customer.customer_id == customer_id,
+                )
+                .first()
+            )
+            if existing is not None:
+                raise ValueError("Customer already exists")
+
         if full_name is not None:
             customer.full_name = full_name
         if email is not None:
