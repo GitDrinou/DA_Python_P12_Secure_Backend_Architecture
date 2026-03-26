@@ -6,8 +6,18 @@ from security.permissions import (
     ROLE_SALES,
     ROLE_SUPPORT,
     ALL_PERMISSIONS,
-    ROLE_PERMISSION_MAPPER
+    ROLE_PERMISSION_MAPPER, PERM_CUSTOMERS_READ_ALL, PERM_CONTRACTS_READ_ALL,
+    PERM_EVENTS_READ_ALL, PERM_EMPLOYEES_READ_ALL, PERM_EMPLOYEES_CREATE,
+    PERM_PERMISSIONS_CREATE, PERM_ROLE_PERMISSIONS_ASSIGN
 )
+
+
+def test_seed_rbac_creates_all_roles(db_session):
+    roles = seed_rbac(db_session)
+
+    assert ROLE_MANAGEMENT in roles
+    assert ROLE_SALES in roles
+    assert ROLE_SUPPORT in roles
 
 
 def test_seed_rbac_creates_roles_and_permissions(db_session):
@@ -47,3 +57,18 @@ def test_seed_rbac_is_idempotent(db_session):
 
     assert len(roles) == 3
     assert len(permissions) == len(ALL_PERMISSIONS)
+
+
+def test_management_role_contains_expected_permissions(db_session):
+    roles = seed_rbac(db_session)
+    management_role = roles[ROLE_MANAGEMENT]
+
+    codes = {permission.code for permission in management_role.permissions}
+
+    assert PERM_CUSTOMERS_READ_ALL in codes
+    assert PERM_CONTRACTS_READ_ALL in codes
+    assert PERM_EVENTS_READ_ALL in codes
+    assert PERM_EMPLOYEES_READ_ALL in codes
+    assert PERM_EMPLOYEES_CREATE in codes
+    assert PERM_PERMISSIONS_CREATE in codes
+    assert PERM_ROLE_PERMISSIONS_ASSIGN in codes
