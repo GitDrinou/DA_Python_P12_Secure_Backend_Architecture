@@ -6,6 +6,42 @@ from services.contract_service import ContractService
 from tests.factories import create_employee, create_customer, create_contract
 
 
+def test_list_contracts(db_session):
+    seed_rbac(db_session)
+
+    sales = create_employee(
+        db_session,
+        "commercial",
+        full_name="Sales",
+        email="sales@test.com",
+    )
+    customer = create_customer(
+        db_session,
+        sales,
+        full_name="Customer",
+        email="customer@test.com",
+    )
+    create_contract(
+        db_session,
+        customer,
+        total=1000.0,
+        remaining=1000.0,
+        is_signed=False
+    )
+    create_contract(
+        db_session,
+        customer,
+        total=2000.0,
+        remaining=500.0,
+        is_signed=True
+    )
+
+    service = ContractService(db_session)
+    contracts = service.list_contracts()
+
+    assert len(contracts) >= 2
+
+
 def test_manager_can_create_any_contract(db_session):
     seed_rbac(db_session)
     service = ContractService(db_session)
@@ -230,7 +266,7 @@ def test_sales_can_update_contract_of_owned_customer(db_session):
     assert update.is_signed is True
 
 
-def test_sales_cannot_update_contrac_of_other_sales_customer(db_session):
+def test_sales_cannot_update_contract_of_other_sales_customer(db_session):
     seed_rbac(db_session)
     service = ContractService(db_session)
     sales_alice = create_employee(
@@ -324,3 +360,52 @@ def test_update_contract_raises_if_contract_not_found(db_session):
             current_employee=manager,
             remaining_amount="100.00",
         )
+
+
+def test_list_unsigned_or_unpaid_contracts(db_session):
+    seed_rbac(db_session)
+
+    sales = create_employee(
+        db_session,
+        "commercial",
+        full_name="Sales",
+        email="sales@test.com",
+    )
+    customer = create_customer(
+        db_session,
+        sales,
+        full_name="Customer",
+        email="customer@test.com",
+    )
+
+    unsigned = create_contract(
+        db_session,
+        customer,
+        total=1000.0,
+        remaining=1000.0,
+        is_signed=False,
+    )
+    unpaid = create_contract(
+        db_session,
+        customer,
+        total=2000.0,
+        remaining=500.0,
+        is_signed=True,
+    )
+    paid_and_signed = create_contract(
+        db_session,
+        customer,
+        total=3000.0,
+        remaining=0.0,
+        is_signed=True,
+    )
+
+    service = ContractService(db_session)
+    contracts = service.list_contracts(
+        unsigned_or_unpaid=True
+    )
+    contract_ids = {contract.contract_id for contract in contracts}
+
+    assert unsigned.contract_id in contract_ids
+    assert unpaid.contract_id in contract_ids
+    assert paid_and_signed.contract_id not in contract_ids

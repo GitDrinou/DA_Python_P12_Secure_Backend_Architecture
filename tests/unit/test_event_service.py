@@ -11,6 +11,48 @@ from tests.factories import (
 )
 
 
+def test_list_events(db_session):
+    seed_rbac(db_session)
+
+    sales = create_employee(
+        db_session,
+        "commercial",
+        full_name="Sales",
+        email="sales@test.com",
+    )
+    support = create_employee(
+        db_session,
+        "support",
+        full_name="Support",
+        email="support@test.com",
+    )
+    customer = create_customer(
+        db_session,
+        sales,
+        full_name="Customer",
+        email="customer@test.com",
+    )
+    contract = create_contract(
+        db_session,
+        customer,
+        total=1000.0,
+        remaining=0.0,
+        is_signed=True,
+    )
+    create_event(
+        db_session,
+        contract,
+        support_employee=support,
+        title="Launch Event",
+    )
+
+    service = EventService(db_session)
+    events = service.list_events()
+
+    assert len(events) >= 1
+    assert any(event.title == "Launch Event" for event in events)
+
+
 def test_sales_can_create_event_for_signed_owned_contract(db_session):
     seed_rbac(db_session)
     service = EventService(db_session)

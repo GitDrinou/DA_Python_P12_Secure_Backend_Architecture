@@ -1,7 +1,6 @@
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 from itertools import count
-
 from database.models import Role, Employee, Customer, Contract, Event
 from security.passwords import hash_password
 
