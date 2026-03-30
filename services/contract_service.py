@@ -2,32 +2,45 @@ from sqlalchemy.orm import joinedload
 from decimal import Decimal
 from database.models import Contract, Customer
 from security import has_permission, can_update_contract
-from security.permissions import PERM_CONTRACTS_CREATE_ALL
+from security.permissions import PERM_CONTRACTS_CREATE_ALL, \
+    PERM_CONTRACTS_FILTER_UNSIGNED_OR_UNPAID
 
 
 class ContractService:
     def __init__(self, db_session):
         self.db_session = db_session
 
-    def list_contracts(self, unsigned_or_unpaid=False):
-        """
-        List all contracts
-        Args:
-            unsigned_or_unpaid(boolean): (optional)
-        """
-        query = (
+    def list_contracts(self):
+        """ List all contracts """
+        return (
             self.db_session.query(Contract)
             .options(joinedload(Contract.customer))
             .order_by(Contract.created_at.desc())
+            .all()
         )
 
-        if unsigned_or_unpaid:
-            query = query.filter(
+    def list_unsigned_or_unpaid_contracts(self, current_employee):
+        """
+        List all un-signed contracts
+        Args:
+            current_employee (Employee): current employee object
+        """
+        if not has_permission(current_employee,
+                              PERM_CONTRACTS_FILTER_UNSIGNED_OR_UNPAID):
+            raise ValueError(
+                "You are not allowed to list unsigned or unpaid contracts"
+            )
+
+        return (
+            self.db_session.query(Contract)
+            .options(joinedload(Contract.customer))
+            .filter(
                 (Contract.is_signed.is_(False)) |
                 (Contract.remaining_amount > 0)
             )
-
-        return query.all()
+            .order_by(Contract.created_at.desc())
+            .all()
+        )
 
     def get_contract(self, contract_id):
         """
@@ -58,14 +71,14 @@ class ContractService:
         """
         Create a new contract
         Args:
-            current_employee: (required) employee id
+            current_employee (Employee): current employee object
             customer_id (str): (required) customer id
             total_amount (str): (required) total amount
             remaining_amount (str): (required) remaining amount
             is_signed (boolean): (optional) signed or unsigned
         """
         if not has_permission(current_employee, PERM_CONTRACTS_CREATE_ALL):
-            raise ValueError("You are not allowed to create contracts")
+            raise ValueError("You are not allowed to create contract")
 
         customer = (
             self.db_session.query(Customer)
@@ -103,8 +116,8 @@ class ContractService:
 
     def update_contract(
             self,
-            contract_id,
             current_employee,
+            contract_id,
             total_amount=None,
             remaining_amount=None,
             is_signed=None,
@@ -112,8 +125,8 @@ class ContractService:
         """
         Update an existing contract
         Args:
+            current_employee (Employee): current employee object
             contract_id (str): contract id
-            current_employee (object)
             total_amount (str): total amount
             remaining_amount (str): remaining amount
             is_signed (boolean): (optional) signed or unsigned
@@ -121,7 +134,7 @@ class ContractService:
         contract = self.get_contract(contract_id)
 
         if not can_update_contract(current_employee, contract):
-            raise ValueError("You are not allowed to update this contract")
+            raise ValueError("You are not allowed to update contract")
 
         new_total_amount = (
             Decimal(str(total_amount))

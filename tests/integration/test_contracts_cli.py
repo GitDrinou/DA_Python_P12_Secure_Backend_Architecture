@@ -135,8 +135,8 @@ def test_contracts_update_as_manager(
     contract = create_contract(
         db_session=db_session,
         customer=customer,
-        total="2000.00",
-        remaining="2000.00",
+        total_amount="2000.00",
+        remaining_amount="2000.00",
     )
 
     monkeypatch.setattr(
@@ -176,8 +176,8 @@ def test_contracts_update_as_sales_on_owned_customer(
     contract = create_contract(
         db_session=db_session,
         customer=customer,
-        total="1800.00",
-        remaining="900.00",
+        total_amount="1800.00",
+        remaining_amount="900.00",
     )
 
     monkeypatch.setattr(
@@ -224,8 +224,8 @@ def test_contracts_update_as_sales_on_other_sales_customer_unauthorized(
     contract = create_contract(
         db_session=db_session,
         customer=customer,
-        total="2500.00",
-        remaining="1000.00",
+        total_amount="2500.00",
+        remaining_amount="1000.00",
     )
 
     monkeypatch.setattr(
@@ -244,7 +244,7 @@ def test_contracts_update_as_sales_on_other_sales_customer_unauthorized(
 
     assert alice is not None
     assert exit_code == 1
-    assert "[ERROR] You are not allowed to update this contract" in output
+    assert "[ERROR] You are not allowed to update contract" in output
 
 
 def test_contracts_update_as_support_unauthorized(
@@ -272,8 +272,8 @@ def test_contracts_update_as_support_unauthorized(
     contract = create_contract(
         db_session=db_session,
         customer=customer,
-        total="1200.00",
-        remaining="1200.00",
+        total_amount="1200.00",
+        remaining_amount="1200.00",
     )
 
     monkeypatch.setattr(
@@ -291,7 +291,7 @@ def test_contracts_update_as_support_unauthorized(
     output = capsys.readouterr().out
 
     assert exit_code == 1
-    assert "[ERROR] You are not allowed to update this contract" in output
+    assert "[ERROR] You are not allowed to update contract" in output
 
 
 def test_contracts_list_unsigned_or_unpaid_as_sales(
@@ -312,8 +312,8 @@ def test_contracts_list_unsigned_or_unpaid_as_sales(
     create_contract(
         db_session=db_session,
         customer=customer,
-        total="1000.00",
-        remaining="1000.00",
+        total_amount="1000.00",
+        remaining_amount="1000.00",
         is_signed=False,
     )
 

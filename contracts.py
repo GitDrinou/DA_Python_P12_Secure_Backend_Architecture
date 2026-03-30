@@ -73,15 +73,13 @@ def handle_list(args, current_employee=None, db_session=None):
         )
 
     service = ContractService(db_session)
-    contracts = service.list_contracts(
-        unsigned_or_unpaid=args.unsigned_or_unpaid
-    )
+    contracts = service.list_contracts()
     print_collection([contract_to_dict(contract) for contract in contracts])
     return 0
 
 
 @permission_required(PERM_CONTRACTS_READ_ALL)
-def handle_get(contract_id, current_employee=None, db_session=None):
+def handle_get(contract_id, db_session=None):
     service = ContractService(db_session)
     contract = service.get_contract(contract_id)
     print_row(contract_to_dict(contract))

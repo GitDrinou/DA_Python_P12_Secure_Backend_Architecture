@@ -1,21 +1,11 @@
 from security.permissions import ROLE_SALES
 from security.rbac import seed_rbac
 from tests.factories import (
-    create_contract,
-    create_customer,
     create_employee,
+    create_customer,
+    create_contract,
     create_event,
-    unique_email,
 )
-
-
-def test_unique_email_generates_distinct_values():
-    first = unique_email("tester")
-    second = unique_email("tester")
-
-    assert first != second
-    assert first.endswith("@example.com")
-    assert second.endswith("@example.com")
 
 
 def test_create_employee_creates_persisted_employee(db_session):

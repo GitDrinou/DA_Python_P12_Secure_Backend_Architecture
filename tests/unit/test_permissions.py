@@ -156,8 +156,8 @@ def test_sales_can_create_event_only_for_signed_owned_contract(db_session):
         db_session,
         alice_customer,
         is_signed=False,
-        total="2000.00",
-        remaining="2000.00",
+        total_amount="2000.00",
+        remaining_amount="2000.00",
     )
     signed_other_contract = create_contract(
         db_session,

@@ -11,7 +11,7 @@ def test_list_contracts(db_session):
 
     sales = create_employee(
         db_session,
-        "commercial",
+        ROLE_SALES,
         full_name="Sales",
         email="sales@test.com",
     )
@@ -24,15 +24,15 @@ def test_list_contracts(db_session):
     create_contract(
         db_session,
         customer,
-        total=1000.0,
-        remaining=1000.0,
+        total_amount=1000.0,
+        remaining_amount=1000.0,
         is_signed=False
     )
     create_contract(
         db_session,
         customer,
-        total=2000.0,
-        remaining=500.0,
+        total_amount=2000.0,
+        remaining_amount=500.0,
         is_signed=True
     )
 
@@ -98,7 +98,7 @@ def test_sales_cannot_create_contract(db_session):
 
     with pytest.raises(
             ValueError,
-            match="You are not allowed to create contracts"
+            match="You are not allowed to create contract"
     ):
         service.create_contract(
             current_employee=sales,
@@ -216,8 +216,8 @@ def test_manager_can_update_any_contract(db_session):
     contract = create_contract(
         db_session,
         customer,
-        total="1000.00",
-        remaining="1000.00",
+        total_amount="1000.00",
+        remaining_amount="1000.00",
     )
 
     updated = service.update_contract(
@@ -251,8 +251,8 @@ def test_sales_can_update_contract_of_owned_customer(db_session):
     contract = create_contract(
         db_session,
         customer,
-        total="2000.00",
-        remaining="1200.00",
+        total_amount="2000.00",
+        remaining_amount="1200.00",
     )
 
     update = service.update_contract(
@@ -290,14 +290,14 @@ def test_sales_cannot_update_contract_of_other_sales_customer(db_session):
     contract = create_contract(
         db_session,
         sales_bob_customer,
-        total="1000.00",
-        remaining="1000.00",
+        total_amount="1000.00",
+        remaining_amount="1000.00",
         is_signed=True,
     )
 
     with pytest.raises(
             ValueError,
-            match="You are not allowed to update this contract"
+            match="You are not allowed to update contract"
     ):
         service.update_contract(
             contract_id=contract.contract_id,
@@ -334,7 +334,7 @@ def test_support_cannot_update_contract(db_session):
 
     with pytest.raises(
         ValueError,
-        match="You are not allowed to update this contract"
+        match="You are not allowed to update contract"
     ):
         service.update_contract(
             contract_id=contract.contract_id,
@@ -362,47 +362,45 @@ def test_update_contract_raises_if_contract_not_found(db_session):
         )
 
 
-def test_list_unsigned_or_unpaid_contracts(db_session):
+def test_list_unsigned_or_unpaid_contracts_returns_expected_rows(db_session):
     seed_rbac(db_session)
 
     sales = create_employee(
         db_session,
         "commercial",
         full_name="Sales",
-        email="sales@test.com",
+        email="sales@test.com"
     )
     customer = create_customer(
-        db_session,
-        sales,
+        db_session, sales,
         full_name="Customer",
-        email="customer@test.com",
+        email="customer@test.com"
     )
-
     unsigned = create_contract(
         db_session,
         customer,
-        total=1000.0,
-        remaining=1000.0,
-        is_signed=False,
+        total_amount=1000.0,
+        remaining_amount=1000.0,
+        is_signed=False
     )
     unpaid = create_contract(
         db_session,
         customer,
-        total=2000.0,
-        remaining=500.0,
-        is_signed=True,
+        total_amount=2000.0,
+        remaining_amount=500.0,
+        is_signed=True
     )
     paid_and_signed = create_contract(
         db_session,
         customer,
-        total=3000.0,
-        remaining=0.0,
-        is_signed=True,
+        total_amount=3000.0,
+        remaining_amount=0.0,
+        is_signed=True
     )
 
     service = ContractService(db_session)
-    contracts = service.list_contracts(
-        unsigned_or_unpaid=True
+    contracts = service.list_unsigned_or_unpaid_contracts(
+        current_employee=sales
     )
     contract_ids = {contract.contract_id for contract in contracts}
 

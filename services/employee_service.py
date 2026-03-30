@@ -1,6 +1,12 @@
 from sqlalchemy.orm import joinedload
 from database.models import Employee, Role
+from security import has_permission
 from security.passwords import hash_password
+from security.permissions import (
+    PERM_EMPLOYEES_UPDATE,
+    PERM_EMPLOYEES_DELETE,
+    PERM_EMPLOYEES_CREATE
+)
 
 
 class EmployeeService:
@@ -36,6 +42,7 @@ class EmployeeService:
 
     def create_employee(
             self,
+            current_employee,
             full_name,
             email,
             password,
@@ -45,12 +52,16 @@ class EmployeeService:
         """
         Create new employee
         Args:
+            current_employee (Employee): current employee object
             full_name (str): employee full name
             email (str): employee email
             password (str): employee password
             role_name (str): employee role
             is_active (bool): employee is active
         """
+        if not has_permission(current_employee, PERM_EMPLOYEES_CREATE):
+            raise ValueError("You are not allowed to create employee")
+
         role = (
             self.db_session.query(Role)
             .filter(Role.name == role_name)
@@ -66,8 +77,8 @@ class EmployeeService:
             .first()
         )
 
-        if existing:
-            raise ValueError("Employee already exists with this email")
+        if existing is not None:
+            raise ValueError("Employee already exists")
 
         employee = Employee(
             full_name=full_name,
@@ -85,6 +96,7 @@ class EmployeeService:
 
     def update_employee(
             self,
+            current_employee,
             employee_id,
             full_name=None,
             email=None,
@@ -95,6 +107,7 @@ class EmployeeService:
         """
         Update employee by employee id
         Args:
+            current_employee (Employee): current employee object
             employee_id (str): employee ident
             full_name (str): employee full name (default None)
             email (str): employee email (default None)
@@ -102,6 +115,9 @@ class EmployeeService:
             role_name (str): employee role (default None)
             is_active (bool): employee is active (default None)
         """
+        if not has_permission(current_employee, PERM_EMPLOYEES_UPDATE):
+            raise ValueError("You are not allowed to update employee")
+
         employee = self.get_employee(employee_id)
 
         if full_name is not None:
@@ -117,7 +133,7 @@ class EmployeeService:
                 .first()
             )
 
-            if existing:
+            if existing is not None:
                 raise ValueError("Employee already exists with this email")
 
             employee.email = email
@@ -145,12 +161,16 @@ class EmployeeService:
 
         return employee
 
-    def delete_employee(self, employee_id):
+    def delete_employee(self, current_employee, employee_id):
         """
         Delete employee by employee id
         Args:
+            current_employee (Employee): current employee object
             employee_id (str): employee ident
         """
+        if not has_permission(current_employee, PERM_EMPLOYEES_DELETE):
+            raise ValueError("You are not allowed to delete employee")
+
         employee = self.get_employee(employee_id)
         self.db_session.delete(employee)
         self.db_session.commit()

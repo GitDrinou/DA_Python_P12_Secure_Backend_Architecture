@@ -52,8 +52,8 @@ def test_events_create_as_sales(
         db_session=db_session,
         customer=customer,
         is_signed=True,
-        total="1200.00",
-        remaining="0.00",
+        total_amount="1200.00",
+        remaining_amount="0.00",
     )
 
     start = datetime.now(timezone.utc) + timedelta(days=1)
@@ -114,8 +114,8 @@ def test_events_create_as_manager_unauthorized(
         db_session=db_session,
         customer=customer,
         is_signed=True,
-        total="1200.00",
-        remaining="0.00",
+        total_amount="1200.00",
+        remaining_amount="0.00",
     )
 
     start = datetime.now(timezone.utc) + timedelta(days=1)
@@ -178,8 +178,8 @@ def test_events_update_as_support_on_assigned_event(
         db_session=db_session,
         customer=customer,
         is_signed=True,
-        total="1200.00",
-        remaining="0.00",
+        total_amount="1200.00",
+        remaining_amount="0.00",
     )
     event = create_event(
         db_session=db_session,
@@ -234,8 +234,8 @@ def test_events_update_as_support_on_unassigned_event_unauthorized(
         db_session=db_session,
         customer=customer,
         is_signed=True,
-        total="1200.00",
-        remaining="0.00",
+        total_amount="1200.00",
+        remaining_amount="0.00",
     )
     event = create_event(
         db_session=db_session,
@@ -260,7 +260,7 @@ def test_events_update_as_support_on_unassigned_event_unauthorized(
     output = capsys.readouterr().out
 
     assert exit_code == 1, output
-    assert "[ERROR] You are not allowed to update this event" in output
+    assert "[ERROR] You are not allowed to update event" in output
 
 
 def test_events_assign_support_as_manager(
@@ -295,8 +295,8 @@ def test_events_assign_support_as_manager(
         db_session=db_session,
         customer=customer,
         is_signed=True,
-        total="1200.00",
-        remaining="0.00",
+        total_amount="1200.00",
+        remaining_amount="0.00",
     )
     event = create_event(db_session=db_session, contract=contract)
 
@@ -353,8 +353,8 @@ def test_events_assign_support_as_support_unauthorized(
         db_session=db_session,
         customer=customer,
         is_signed=True,
-        total="1200.00",
-        remaining="0.00",
+        total_amount="1200.00",
+        remaining_amount="0.00",
     )
     event = create_event(db_session=db_session, contract=contract)
 
@@ -404,8 +404,8 @@ def test_events_list_without_support_as_manager(
         db_session=db_session,
         customer=customer,
         is_signed=True,
-        total="1200.00",
-        remaining="0.00",
+        total_amount="1200.00",
+        remaining_amount="0.00",
     )
     create_event(
         db_session=db_session,
@@ -456,8 +456,8 @@ def test_events_list_assigned_to_me_as_support(
         db_session=db_session,
         customer=customer,
         is_signed=True,
-        total="1200.00",
-        remaining="0.00",
+        total_amount="1200.00",
+        remaining_amount="0.00",
     )
     create_event(
         db_session=db_session,

@@ -1,31 +1,12 @@
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
-from itertools import count
 from database.models import Role, Employee, Customer, Contract, Event
 from security.passwords import hash_password
+from sqlalchemy import select
 
-_email_counter = count(1)
-_company_counter = count(1)
-_phone_counter = count(1)
-
-
-def unique_email(prefix="user"):
-    index = next(_email_counter)
-    return f"{prefix}{index}@example.com"
-
-
-def unique_company(prefix="company"):
-    index = next(_company_counter)
-    return f"{prefix}{index}@example.com"
-
-
-def unique_phone(prefix="phone"):
-    index = next(_phone_counter)
-    return f"{prefix}{index}@example.com"
-
-
-def get_role(db_session, role_name):
-    return db_session.query(Role).filter(Role.name == role_name).first()
+_employee_counter = 0
+_customer_counter = 0
+_event_counter = 0
 
 
 def create_employee(
@@ -36,13 +17,16 @@ def create_employee(
     password="Password123!",
     is_active=True,
 ):
-    role = get_role(db_session, role_name)
-    if role is None:
-        raise ValueError(f"Unknown role: {role_name}")
+    global _employee_counter
+    _employee_counter += 1
+
+    role = db_session.execute(
+        select(Role).where(Role.name == role_name)
+    ).scalar_one()
 
     employee = Employee(
-        full_name=full_name or f"{role_name.title()} Employee",
-        email=email or unique_email(role_name),
+        full_name=full_name or f"Employee {_employee_counter}",
+        email=email or f"employee{_employee_counter}@test.com",
         password_hash=hash_password(password),
         is_active=is_active,
         role_id=role.role_id,
@@ -51,48 +35,54 @@ def create_employee(
     db_session.add(employee)
     db_session.commit()
     db_session.refresh(employee)
+
     return employee
 
 
 def create_customer(
     db_session,
     sales_employee,
-    full_name="Client Test",
+    full_name=None,
     email=None,
-    phone=None,
-    company_name=None,
+    phone="0102030405",
+    company_name="Test Company",
 ):
+    global _customer_counter
+    _customer_counter += 1
+
     customer = Customer(
-        full_name=full_name,
-        email=email or unique_email("customer"),
-        phone=phone or unique_phone(),
-        company_name=company_name or unique_company("ACME"),
+        full_name=full_name or f"Customer {_customer_counter}",
+        email=email or f"customer{_customer_counter}@test.com",
+        phone=phone,
+        company_name=company_name,
         sales_id=sales_employee.employee_id,
     )
 
     db_session.add(customer)
     db_session.commit()
     db_session.refresh(customer)
+
     return customer
 
 
 def create_contract(
     db_session,
     customer,
+    total_amount=1000.0,
+    remaining_amount=1000.0,
     is_signed=False,
-    total="1000.00",
-    remaining="1000.00",
 ):
     contract = Contract(
-        total_amount=Decimal(total),
-        remaining_amount=Decimal(remaining),
-        is_signed=is_signed,
         customers_id=customer.customer_id,
+        total_amount=Decimal(str(total_amount)),
+        remaining_amount=Decimal(str(remaining_amount)),
+        is_signed=is_signed,
     )
 
     db_session.add(contract)
     db_session.commit()
     db_session.refresh(contract)
+
     return contract
 
 
@@ -100,28 +90,32 @@ def create_event(
     db_session,
     contract,
     support_employee=None,
-    title="Salon",
-    location="Paris",
-    attendees=50,
-    notes="Test event",
+    title=None,
     start_date=None,
     end_date=None,
+    location="Paris",
+    attendees=10,
+    notes="Test event",
 ):
-    start = start_date or datetime.now(timezone.utc)
-    end = end_date or (start + timedelta(hours=4))
+    global _event_counter
+    _event_counter += 1
 
     event = Event(
-        title=title,
-        start_date=start,
-        end_date=end,
+        contract_id=contract.contract_id,
+        support_id=support_employee.employee_id if support_employee else None,
+        title=title or f"Event {_event_counter}",
+        start_date=(
+                start_date or datetime.now(timezone.utc) + timedelta(days=7)),
+        end_date=(
+                end_date
+                or datetime.now(timezone.utc) + timedelta(days=7, hours=4)),
         location=location,
         attendees=attendees,
         notes=notes,
-        contract_id=contract.contract_id,
-        support_id=support_employee.employee_id if support_employee else None,
     )
 
     db_session.add(event)
     db_session.commit()
     db_session.refresh(event)
+
     return event

@@ -8,7 +8,8 @@ from security import (
 )
 from security.permissions import (
     PERM_EVENTS_ASSIGN_SUPPORT,
-    ROLE_SUPPORT,
+    ROLE_SUPPORT, PERM_EVENTS_FILTER_WITHOUT_SUPPORT,
+    PERM_EVENTS_FILTER_ASSIGNED_TO_ME,
 )
 
 
@@ -17,32 +18,65 @@ class EventService:
         self.db_session = db_session
 
     def list_events(self, without_support=False, assigned_to_employee_id=None):
-        """
-        List events.
-        Args:
-            without_support (boolean): filter events without support assigned
-            assigned_to_employee_id (str): filter events assigned to support
-        """
-        query = (
+        """ List events """
+        return (
             self.db_session.query(Event)
             .options(
                 joinedload(Event.contract).joinedload(Contract.customer),
                 joinedload(Event.support),
             )
             .order_by(Event.start_date.asc())
+            .all()
         )
 
-        if without_support:
-            query = query.filter(Event.support_id.is_(None))
+    def list_events_without_support(self, current_employee):
+        """
+        List events without support
+        Args:
+            current_employee (Employee): current employee object
+        """
+        if not has_permission(current_employee,
+                              PERM_EVENTS_FILTER_WITHOUT_SUPPORT):
+            raise ValueError("You ar not allowed to list events withour "
+                             "support")
 
-        if assigned_to_employee_id is not None:
-            query = query.filter(Event.support_id == assigned_to_employee_id)
+        return (
+            self.db_session.query(Event)
+            .options(
+                joinedload(Event.contract).joinedload(Contract.customer),
+                joinedload(Event.support),
+            )
+            .filter(Event.support_id.is_(None))
+            .order_by(Event.start_date.asc())
+            .all()
+        )
 
-        return query.all()
+    def list_my_events(self, current_employee):
+        """
+        List events assigned to the current employee
+        Args:
+             current_employee (Employee): current employee object
+        """
+        if not has_permission(current_employee,
+                              PERM_EVENTS_FILTER_ASSIGNED_TO_ME):
+            raise ValueError("You are not allowed to list your events")
+
+        return (
+            self.db_session.query(Event)
+            .options(
+                joinedload(Event.contract).joinedload(Contract.customer),
+                joinedload(Event.support),
+            )
+            .filter(Event.support_id == current_employee.employee_id)
+            .order_by(Event.start_date.asc())
+            .all()
+        )
 
     def get_event(self, event_id):
         """
-        Get event by id.
+        Get event
+        Args:
+            event_id (str): event id
         """
         event = (
             self.db_session.query(Event)
@@ -73,7 +107,7 @@ class EventService:
         """
         Create a new event for a signed contract owned by the current sales.
         Args:
-            current_employee (object): current employee
+            current_employee (Employee): current employee object
             contract_id (str): contract id
             title (str): event title
             start_date (datetime): event start date
@@ -93,7 +127,7 @@ class EventService:
             raise ValueError("Contract not found")
 
         if not can_create_event(current_employee, contract):
-            raise ValueError("You are not allowed to create this event")
+            raise ValueError("You are not allowed to create event")
 
         start_date = self._format_datetime(start_date)
         end_date = self._format_datetime(end_date)
@@ -138,7 +172,7 @@ class EventService:
         - support can update only events assigned to them
         Args:
             event_id (str): event id
-            current_employee (object): current employee
+            current_employee (Employee): current employee object
             title (str): event title
             start_date (str|datetime): event start date
             end_date (str|datetime): event end date
@@ -149,7 +183,7 @@ class EventService:
         event = self.get_event(event_id)
 
         if not can_update_event(current_employee, event):
-            raise ValueError("You are not allowed to update this event")
+            raise ValueError("You are not allowed to update event")
 
         new_start_date = (
             self._format_datetime(start_date)
@@ -196,13 +230,13 @@ class EventService:
         Assign a support employee to an event.
         Args:
             event_id (str): event id
-            current_employee (object): current employee
+            current_employee (Employee): current employee object
             support_id (str): support employee id
         """
         event = self.get_event(event_id)
 
         if not has_permission(current_employee, PERM_EVENTS_ASSIGN_SUPPORT):
-            raise ValueError("You are not allowed to assign support to events")
+            raise ValueError("You are not allowed to assign support")
 
         support_employee = (
             self.db_session.query(Employee)
@@ -218,7 +252,7 @@ class EventService:
                 support_employee.role is None
                 or support_employee.role.name != ROLE_SUPPORT
         ):
-            raise ValueError("Selected employee is not a support employee")
+            raise ValueError("Employee must have support role")
 
         event.support_id = support_employee.employee_id
 

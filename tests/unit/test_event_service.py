@@ -1,6 +1,6 @@
-from datetime import datetime, timezone, timedelta
 import pytest
-from security.permissions import ROLE_MANAGEMENT, ROLE_SALES, ROLE_SUPPORT
+from datetime import datetime, timezone, timedelta
+from security.permissions import ROLE_SALES, ROLE_SUPPORT, ROLE_MANAGEMENT
 from security.rbac import seed_rbac
 from services.event_service import EventService
 from tests.factories import (
@@ -16,13 +16,13 @@ def test_list_events(db_session):
 
     sales = create_employee(
         db_session,
-        "commercial",
+        ROLE_SALES,
         full_name="Sales",
         email="sales@test.com",
     )
     support = create_employee(
         db_session,
-        "support",
+        ROLE_SUPPORT,
         full_name="Support",
         email="support@test.com",
     )
@@ -35,8 +35,8 @@ def test_list_events(db_session):
     contract = create_contract(
         db_session,
         customer,
-        total=1000.0,
-        remaining=0.0,
+        total_amount=1000.0,
+        remaining_amount=0.0,
         is_signed=True,
     )
     create_event(
@@ -68,8 +68,8 @@ def test_sales_can_create_event_for_signed_owned_contract(db_session):
         db_session,
         customer,
         is_signed=True,
-        total="1000.00",
-        remaining="0.00",
+        total_amount="1000.00",
+        remaining_amount="0.00",
     )
 
     start = datetime.now(timezone.utc) + timedelta(days=1)
@@ -111,8 +111,8 @@ def test_sales_cannot_create_event_for_unsigned_contract(db_session):
         db_session,
         customer,
         is_signed=False,
-        total="1000.00",
-        remaining="1000.00",
+        total_amount="1000.00",
+        remaining_amount="1000.00",
     )
 
     start = datetime.now(timezone.utc) + timedelta(days=1)
@@ -120,7 +120,7 @@ def test_sales_cannot_create_event_for_unsigned_contract(db_session):
 
     with pytest.raises(
             ValueError,
-            match="You are not allowed to create this event"
+            match="You are not allowed to create event"
     ):
         service.create_event(
             current_employee=sales,
@@ -159,8 +159,8 @@ def test_sales_cannot_create_event_for_other_sales_contract(db_session):
         db_session,
         customer,
         is_signed=True,
-        total="1000.00",
-        remaining="0.00",
+        total_amount="1000.00",
+        remaining_amount="0.00",
     )
 
     start = datetime.now(timezone.utc) + timedelta(days=2)
@@ -168,7 +168,7 @@ def test_sales_cannot_create_event_for_other_sales_contract(db_session):
 
     with pytest.raises(
             ValueError,
-            match="You are not allowed to create this event"
+            match="You are not allowed to create event"
     ):
         service.create_event(
             current_employee=alice,
@@ -213,7 +213,7 @@ def test_manager_can_assign_support_to_event(db_session):
         db_session,
         customer,
         is_signed=True,
-        remaining="0.00"
+        remaining_amount="0.00"
     )
     event = create_event(db_session, contract)
 
@@ -258,13 +258,13 @@ def test_support_cannot_assign_support_to_event(db_session):
         db_session,
         customer,
         is_signed=True,
-        remaining="0.00"
+        remaining_amount="0.00"
     )
     event = create_event(db_session, contract)
 
     with pytest.raises(
         ValueError,
-        match="You are not allowed to assign support to events",
+        match="You are not allowed to assign support",
     ):
         service.assign_support(
             event_id=event.event_id,
@@ -299,7 +299,7 @@ def test_support_can_update_assigned_event(db_session):
         db_session,
         customer,
         is_signed=True,
-        remaining="0.00"
+        remaining_amount="0.00"
     )
     event = create_event(db_session, contract, support_employee=support)
 
@@ -342,13 +342,13 @@ def test_support_cannot_update_unassigned_event(db_session):
         db_session,
         customer,
         is_signed=True,
-        remaining="0.00"
+        remaining_amount="0.00"
     )
     event = create_event(db_session, contract)
 
     with pytest.raises(
             ValueError,
-            match="You are not allowed to update this event"
+            match="You are not allowed to update event"
     ):
         service.update_event(
             event_id=event.event_id,
@@ -382,7 +382,7 @@ def test_manager_can_update_any_event(db_session):
         db_session,
         customer,
         is_signed=True,
-        remaining="0.00"
+        remaining_amount="0.00"
     )
     event = create_event(db_session, contract)
 
@@ -397,100 +397,108 @@ def test_manager_can_update_any_event(db_session):
     assert updated.attendees == 120
 
 
-def test_list_events_without_support_filter(db_session):
+def test_list_events_without_support_allows_management(db_session):
     seed_rbac(db_session)
-    service = EventService(db_session)
 
+    manager = create_employee(
+        db_session,
+        ROLE_MANAGEMENT,
+        full_name="Manager",
+        email="manager@test.com"
+    )
     sales = create_employee(
         db_session,
         ROLE_SALES,
-        full_name="Sales Event",
-        email="sales.filter.without.support@test.com",
+        full_name="Sales",
+        email="sales@test.com"
     )
     support = create_employee(
         db_session,
         ROLE_SUPPORT,
-        full_name="Support Event",
-        email="support.filter.without.support@test.com",
+        full_name="Support",
+        email="support@test.com"
     )
     customer = create_customer(
         db_session,
         sales,
-        email="cust.filter.without@test.com"
+        full_name="Customer",
+        email="customer@test.com"
     )
     contract = create_contract(
         db_session,
         customer,
-        is_signed=True,
-        remaining="0.00"
+        total_amount=1400.0,
+        remaining_amount=0.0,
+        is_signed=True
     )
-
-    event_without_support = create_event(
+    unassigned = create_event(
         db_session,
         contract,
-        title="Without Support",
         support_employee=None,
+        title="Unassigned Event"
     )
     create_event(
         db_session,
         contract,
-        title="With Support",
         support_employee=support,
+        title="Assigned Event"
     )
 
-    events = service.list_events(without_support=True)
-
-    assert len(events) == 1
-    assert events[0].event_id == event_without_support.event_id
-
-
-def test_list_events_assigned_to_employee_filter(db_session):
-    seed_rbac(db_session)
     service = EventService(db_session)
+    events = service.list_events_without_support(current_employee=manager)
+    event_ids = {event.event_id for event in events}
+
+    assert unassigned.event_id in event_ids
+
+
+def test_list_my_events_allows_support(db_session):
+    seed_rbac(db_session)
 
     sales = create_employee(
         db_session,
         ROLE_SALES,
-        full_name="Sales Event",
-        email="sales.filter.mine@test.com",
+        full_name="Sales",
+        email="sales@test.com"
     )
     support = create_employee(
         db_session,
         ROLE_SUPPORT,
-        full_name="My Support",
-        email="support.filter.mine@test.com",
+        full_name="Support",
+        email="support@test.com"
     )
     other_support = create_employee(
         db_session,
         ROLE_SUPPORT,
         full_name="Other Support",
-        email="support.filter.other@test.com",
-    )
+        email="other-support@test.com")
     customer = create_customer(
         db_session,
         sales,
-        email="cust.filter.mine@test.com"
+        full_name="Customer",
+        email="customer@test.com"
     )
     contract = create_contract(
         db_session,
         customer,
-        is_signed=True,
-        remaining="0.00"
+        total_amount=1700.0,
+        remaining_amount=0.0,
+        is_signed=True
     )
-
     my_event = create_event(
         db_session,
         contract,
-        support_employee=support, title="Mine"
+        support_employee=support,
+        title="My Event"
     )
     create_event(
         db_session,
         contract,
         support_employee=other_support,
-        title="Other"
+        title="Other Support Event"
     )
 
-    events = service.list_events(assigned_to_employee_id=support.employee_id)
+    service = EventService(db_session)
+    events = service.list_my_events(current_employee=support)
+    event_ids = {event.event_id for event in events}
 
-    assert len(events) == 1
-    assert events[0].event_id == my_event.event_id
+    assert my_event.event_id in event_ids

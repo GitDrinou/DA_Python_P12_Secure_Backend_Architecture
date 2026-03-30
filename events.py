@@ -67,9 +67,13 @@ def build_parser():
 
 def parse_datetime(value):
     text = str(value).strip()
-    if text.endswith("Z"):
-        text = text[:-1] + "+00:00"
-    dt = datetime.fromisoformat(text)
+    try:
+        if text.endswith("Z"):
+            text = text[:-1] + "+00:00"
+        dt = datetime.fromisoformat(text)
+    except ValueError:
+        dt = datetime.strptime(text, "%d/%m/%Y")
+
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt
@@ -132,7 +136,7 @@ def handle_list(args, current_employee=None, db_session=None):
 
 
 @permission_required(PERM_EVENTS_READ_ALL)
-def handle_get(event_id, current_employee=None, db_session=None):
+def handle_get(event_id, db_session=None):
     service = EventService(db_session)
     event = service.get_event(event_id)
     print_row(event_to_dict(event))
@@ -141,6 +145,7 @@ def handle_get(event_id, current_employee=None, db_session=None):
 
 @permission_required(PERM_EVENTS_CREATE_FOR_SIGNED_CONTRACT_OWNED_CUSTOMERS)
 def handle_create(args, current_employee=None, db_session=None):
+    """ Create a new event """
     service = EventService(db_session)
 
     event = service.create_event(

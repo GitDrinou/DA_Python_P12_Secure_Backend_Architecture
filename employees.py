@@ -76,6 +76,7 @@ def handle_get(employee_id, current_employee=None, db_session=None):
 def handle_create(args, current_employee=None, db_session=None):
     service = EmployeeService(db_session)
     employee = service.create_employee(
+        current_employee=current_employee,
         full_name=args.full_name,
         email=args.email,
         password=args.password,
@@ -96,6 +97,7 @@ def handle_update(args, current_employee=None, db_session=None):
         is_active = args.is_active == "true"
 
     employee = service.update_employee(
+        current_employee=current_employee,
         employee_id=args.employee_id,
         full_name=args.full_name,
         email=args.email,
@@ -113,7 +115,10 @@ def handle_update(args, current_employee=None, db_session=None):
 @permission_required(PERM_EMPLOYEES_DELETE)
 def handle_delete(employee_id, current_employee=None, db_session=None):
     service = EmployeeService(db_session)
-    service.delete_employee(employee_id)
+    service.delete_employee(
+        current_employee=current_employee,
+        employee_id=employee_id
+    )
     print_success("Employee deleted")
     return 0
 
