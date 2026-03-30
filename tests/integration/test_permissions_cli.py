@@ -1,4 +1,6 @@
 import sys
+
+from security.permissions import ROLE_ADMIN, ROLE_SALES
 from security.rbac import seed_rbac
 from security.session_store import save_session
 from security.jwt_handler import create_access_token, create_refresh_token
@@ -31,7 +33,7 @@ def test_permissions_list_allows_management(
 
     admin = create_employee(
         db_session=db_session,
-        role_name="gestion",
+        role_name=ROLE_ADMIN,
         full_name="Admin Permissions",
         email="admin@test.com",
         password="Password123!",
@@ -68,7 +70,7 @@ def test_permissions_list_rejects_sales(
 
     sales = create_employee(
         db_session=db_session,
-        role_name="commercial",
+        role_name=ROLE_SALES,
         full_name="Sales Permissions",
         email="sales@test.com",
         password="Password123!",
@@ -105,7 +107,7 @@ def test_permissions_create_allows_management(
 
     admin = create_employee(
         db_session=db_session,
-        role_name="gestion",
+        role_name=ROLE_ADMIN,
         full_name="Admin Create Permission",
         email="admin@test.com",
         password="Password123!",
@@ -159,7 +161,7 @@ def test_permissions_update_allows_management(
 
     admin = create_employee(
         db_session=db_session,
-        role_name="gestion",
+        role_name=ROLE_ADMIN,
         full_name="Admin Update Permission",
         email="admin@test.com",
         password="Password123!",
@@ -214,7 +216,7 @@ def test_permissions_delete_allows_management(
 
     admin = create_employee(
         db_session=db_session,
-        role_name="gestion",
+        role_name=ROLE_ADMIN,
         full_name="Admin Delete Permission",
         email="admin@test.com",
         password="Password123!",
@@ -254,7 +256,7 @@ def test_permissions_lists_roles(monkeypatch, db_session, tmp_path, capsys):
 
     admin = create_employee(
         db_session=db_session,
-        role_name="gestion",
+        role_name=ROLE_ADMIN,
         full_name="Admin Roles Permission",
         email="admin@test.com",
         password="Password123!",
@@ -295,7 +297,7 @@ def test_permissions_assign_allows_management(
 
     admin = create_employee(
         db_session=db_session,
-        role_name="gestion",
+        role_name=ROLE_ADMIN,
         full_name="Admin Assign Permission",
         email="admin@test.com",
         password="Password123!",
@@ -351,7 +353,7 @@ def test_permissions_remove_allows_management(
 
     admin = create_employee(
         db_session=db_session,
-        role_name="gestion",
+        role_name=ROLE_ADMIN,
         full_name="Admin Remove Permission",
         email="admin@test.com",
         password="Password123!",

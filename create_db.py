@@ -5,7 +5,7 @@ import database.models  # noqa: F401
 from database.models import Employee, Role
 from database.session import SessionLocal
 from security.passwords import hash_password
-from security.permissions import ROLE_ADMIN, ROLE_MANAGEMENT
+from security.permissions import ROLE_ADMIN
 from security.rbac import seed_rbac
 
 
@@ -37,7 +37,7 @@ def check_admin(session, admin_email, admin_password):
     ).scalar_one_or_none()
 
     if role is None:
-        raise ValueError(f"Role '{ROLE_MANAGEMENT}' not found.")
+        raise ValueError(f"Role '{ROLE_ADMIN}' not found.")
 
     existing_admin = session.execute(
         select(Employee).where(Employee.email == admin_email)

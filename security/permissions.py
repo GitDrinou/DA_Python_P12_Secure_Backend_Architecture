@@ -39,7 +39,7 @@ PERM_EMPLOYEES_CREATE = "employees.create"
 PERM_EMPLOYEES_UPDATE = "employees.update"
 PERM_EMPLOYEES_DELETE = "employees.delete"
 
-# Permissions / role-permission management
+# Admin permissions
 PERM_PERMISSIONS_READ_ALL = "permissions.read_all"
 PERM_PERMISSIONS_CREATE = "permissions.create"
 PERM_PERMISSIONS_UPDATE = "permissions.update"
@@ -53,6 +53,15 @@ COMMON_PERMISSIONS = {
     PERM_EVENTS_READ_ALL: "Lire tous les événements",
 }
 
+ADMIN_PERMISSIONS = {
+    PERM_PERMISSIONS_READ_ALL: "Lire toutes les permissions",
+    PERM_PERMISSIONS_CREATE: "Créer une permission",
+    PERM_PERMISSIONS_UPDATE: "Modifier une permission",
+    PERM_PERMISSIONS_DELETE: "Supprimer une permission",
+    PERM_ROLE_PERMISSIONS_ASSIGN: "Assigner une permission à un rôle",
+    PERM_ROLE_PERMISSIONS_REMOVE: "Retirer une permission d'un rôle",
+}
+
 MANAGEMENT_PERMISSIONS = {
     PERM_EMPLOYEES_READ_ALL: "Lire tous les collaborateurs",
     PERM_EMPLOYEES_CREATE: "Créer un collaborateur",
@@ -64,12 +73,6 @@ MANAGEMENT_PERMISSIONS = {
         "Filtrer les événements sans contact support"
     ),
     PERM_EVENTS_ASSIGN_SUPPORT: "Assigner un contact support à un événement",
-    PERM_PERMISSIONS_READ_ALL: "Lire toutes les permissions",
-    PERM_PERMISSIONS_CREATE: "Créer une permission",
-    PERM_PERMISSIONS_UPDATE: "Modifier une permission",
-    PERM_PERMISSIONS_DELETE: "Supprimer une permission",
-    PERM_ROLE_PERMISSIONS_ASSIGN: "Assigner une permission à un rôle",
-    PERM_ROLE_PERMISSIONS_REMOVE: "Retirer une permission d'un rôle",
 }
 
 SALES_PERMISSIONS = {
@@ -100,6 +103,7 @@ SUPPORT_PERMISSIONS = {
 
 ALL_PERMISSIONS = {
     **COMMON_PERMISSIONS,
+    **ADMIN_PERMISSIONS,
     **MANAGEMENT_PERMISSIONS,
     **SALES_PERMISSIONS,
     **SUPPORT_PERMISSIONS,

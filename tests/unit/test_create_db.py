@@ -63,7 +63,7 @@ def test_check_admin_raises_if_management_role_is_missing(db_session):
         )
         assert False, "Expected ValueError to be raised"
     except ValueError as exc:
-        assert str(exc) == "Role 'gestion' not found."
+        assert str(exc) == "Role 'admin' not found."
 
 
 def test_check_admin_raises_if_admin_email_is_missing(db_session):

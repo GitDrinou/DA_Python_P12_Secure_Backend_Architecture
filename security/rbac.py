@@ -1,42 +1,67 @@
-from database.models import Role, Permission
 from sqlalchemy import select
-from security.permissions import ALL_PERMISSIONS, ROLE_PERMISSION_MAPPER
+from sqlalchemy.orm import joinedload
+from database.models import Role, Permission
+from security.permissions import ROLES, ALL_PERMISSIONS, ROLE_PERMISSION_MAPPER
 
 
 def seed_rbac(session):
-    """ Seed roles, permissions and relation role_permission."""
-    existing_roles = {
+    roles_by_name = {
         role.name: role
-        for role in session.execute(select(Role)).scalars().all()
+        for role in session.execute(
+            select(Role).options(joinedload(Role.permissions))
+        ).scalars().unique().all()
     }
 
-    existing_permissions = {
+    for role_name in ROLES:
+        if role_name not in roles_by_name:
+            role = Role(name=role_name)
+            session.add(role)
+            session.flush()
+            roles_by_name[role_name] = role
+
+    permissions_by_code = {
         permission.code: permission
         for permission in session.execute(select(Permission)).scalars().all()
     }
 
     for code, description in ALL_PERMISSIONS.items():
-        if code not in existing_permissions:
+        if code not in permissions_by_code:
             permission = Permission(code=code, description=description)
             session.add(permission)
-            existing_permissions[code] = permission
+            session.flush()
+            permissions_by_code[code] = permission
 
     session.flush()
 
-    for role_name in ROLE_PERMISSION_MAPPER:
-        if role_name not in existing_roles:
-            role = Role(name=role_name)
-            session.add(role)
-            existing_roles[role_name] = role
-
-    session.flush()
+    roles_by_name = {
+        role.name: role
+        for role in session.execute(
+            select(Role).options(joinedload(Role.permissions))
+        ).scalars().unique().all()
+    }
 
     for role_name, permission_codes in ROLE_PERMISSION_MAPPER.items():
-        role = existing_roles[role_name]
-        role.permissions = [
-            existing_permissions[code]
-            for code in sorted(permission_codes)
-        ]
+        role = roles_by_name[role_name]
+        current_codes = {permission.code for permission in role.permissions}
+
+        missing_codes = set(permission_codes) - current_codes
+        extra_codes = current_codes - set(permission_codes)
+
+        for code in missing_codes:
+            role.permissions.append(permissions_by_code[code])
+
+        if extra_codes:
+            role.permissions = [
+                permission
+                for permission in role.permissions
+                if permission.code not in extra_codes
+            ]
 
     session.commit()
-    return existing_roles
+
+    return {
+        role.name: role
+        for role in session.execute(
+            select(Role).options(joinedload(Role.permissions))
+        ).scalars().unique().all()
+    }
