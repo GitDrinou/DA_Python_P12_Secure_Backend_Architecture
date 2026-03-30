@@ -1,8 +1,9 @@
 from sqlalchemy import select
 from create_db import check_admin
 from database.models import Employee
-from security.permissions import ROLE_MANAGEMENT
+from security.permissions import ROLE_ADMIN
 from security.rbac import seed_rbac
+from database.models import Role
 
 
 def test_check_admin_creates_admin_when_missing(db_session):
@@ -18,7 +19,7 @@ def test_check_admin_creates_admin_when_missing(db_session):
     assert admin.email == "admin@test.com"
     assert admin.full_name == "Admin EPIC EVENTS"
     assert admin.is_active is True
-    assert admin.role.name == ROLE_MANAGEMENT
+    assert admin.role.name == ROLE_ADMIN
 
     persisted = db_session.execute(
         select(Employee).where(Employee.email == "admin@test.com")
@@ -91,3 +92,32 @@ def test_check_admin_raises_if_admin_password_is_missing(db_session):
         assert False, "Expected ValueError to be raised"
     except ValueError as exc:
         assert str(exc) == "Admin password is not configured."
+
+
+def test_check_admin_reactivates_existing_admin_and_moves_it_to_admin_role(
+    db_session,
+):
+    seed_rbac(db_session)
+
+    admin_role = db_session.execute(
+        select(Role).where(Role.name == ROLE_ADMIN)
+    ).scalar_one()
+
+    admin, _ = check_admin(
+        session=db_session,
+        admin_email="admin@test.com",
+        admin_password="AdminPassword123!",
+    )
+
+    admin.is_active = False
+    db_session.commit()
+
+    updated_admin, created = check_admin(
+        session=db_session,
+        admin_email="admin@test.com",
+        admin_password="AdminPassword123!",
+    )
+
+    assert created is False
+    assert updated_admin.is_active is True
+    assert updated_admin.role_id == admin_role.role_id

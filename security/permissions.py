@@ -1,8 +1,10 @@
+ROLE_ADMIN = "admin"
 ROLE_MANAGEMENT = "gestion"
 ROLE_SALES = "commercial"
 ROLE_SUPPORT = "support"
 
 ROLES = {
+    ROLE_ADMIN,
     ROLE_MANAGEMENT,
     ROLE_SALES,
     ROLE_SUPPORT,
@@ -37,7 +39,7 @@ PERM_EMPLOYEES_CREATE = "employees.create"
 PERM_EMPLOYEES_UPDATE = "employees.update"
 PERM_EMPLOYEES_DELETE = "employees.delete"
 
-# Permissions Management by admin
+# Permissions / role-permission management
 PERM_PERMISSIONS_READ_ALL = "permissions.read_all"
 PERM_PERMISSIONS_CREATE = "permissions.create"
 PERM_PERMISSIONS_UPDATE = "permissions.update"
@@ -104,6 +106,7 @@ ALL_PERMISSIONS = {
 }
 
 ROLE_PERMISSION_MAPPER = {
+    ROLE_ADMIN: set(ALL_PERMISSIONS),
     ROLE_MANAGEMENT: set(COMMON_PERMISSIONS) | set(MANAGEMENT_PERMISSIONS),
     ROLE_SALES: set(COMMON_PERMISSIONS) | set(SALES_PERMISSIONS),
     ROLE_SUPPORT: set(COMMON_PERMISSIONS) | set(SUPPORT_PERMISSIONS),

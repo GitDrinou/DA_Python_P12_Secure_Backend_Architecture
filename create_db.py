@@ -5,7 +5,7 @@ import database.models  # noqa: F401
 from database.models import Employee, Role
 from database.session import SessionLocal
 from security.passwords import hash_password
-from security.permissions import ROLE_MANAGEMENT
+from security.permissions import ROLE_ADMIN, ROLE_MANAGEMENT
 from security.rbac import seed_rbac
 
 
@@ -33,7 +33,7 @@ def check_admin(session, admin_email, admin_password):
         raise ValueError("Admin password is not configured.")
 
     role = session.execute(
-        select(Role).where(Role.name == ROLE_MANAGEMENT)
+        select(Role).where(Role.name == ROLE_ADMIN)
     ).scalar_one_or_none()
 
     if role is None:
