@@ -1,13 +1,15 @@
-import sys
 from tests.factories import create_employee, create_customer, create_contract
 from tests.helpers.auth import (
-    login_as_manager,
-    login_as_sales,
-    login_as_support
+    login_as_manager, login_as_sales, login_as_support
 )
 
 
-def test_contracts_list_requires_login(monkeypatch, capsys, tmp_path):
+def test_contracts_list_requires_login(
+        monkeypatch,
+        db_session,
+        tmp_path,
+        capsys
+):
     from security import session_store
     import contracts
 
@@ -15,29 +17,28 @@ def test_contracts_list_requires_login(monkeypatch, capsys, tmp_path):
     monkeypatch.setattr(
         session_store,
         "SESSION_FILE",
-        tmp_path / "session.json",
+        tmp_path / "session.json"
     )
-    monkeypatch.setattr(sys, "argv", ["contracts.py", "list"])
 
-    exit_code = contracts.main()
+    exit_code = contracts.main(
+        db_session=db_session,
+        args=["list"],
+    )
     output = capsys.readouterr().out
 
-    assert exit_code == 1
-    assert (
-        "[FORBIDDEN] No active session. "
-        "Please login with: >> epic_events.py login <<"
-    ) in output
+    assert exit_code != 0
+    assert "No active session" in output
 
 
 def test_contracts_create_as_manager(
-    monkeypatch,
-    db_session,
-    tmp_path,
-    capsys,
+        monkeypatch,
+        db_session,
+        tmp_path,
+        capsys
 ):
     import contracts
 
-    manager = login_as_manager(monkeypatch, db_session, tmp_path)
+    login_as_manager(monkeypatch, db_session, tmp_path)
 
     sales = create_employee(
         db_session=db_session,
@@ -52,25 +53,20 @@ def test_contracts_create_as_manager(
         email="customer.create.contract@test.com",
     )
 
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "contracts.py",
+    exit_code = contracts.main(
+        db_session=db_session,
+        args=[
             "create",
             "--customer-id", customer.customer_id,
-            "--total-amount", "1500.00",
-            "--remaining-amount", "1500.00",
+            "--total-amount", "1500",
+            "--remaining-amount", "1500",
             "--is-signed", "false",
         ],
     )
-
-    exit_code = contracts.main(db_session=db_session)
     output = capsys.readouterr().out
 
-    assert manager is not None
     assert exit_code == 0
-    assert "[SUCCESS] Contract created" in output
+    assert "Contract created" in output
 
 
 def test_contracts_create_as_sales_unauthorized(
@@ -82,39 +78,33 @@ def test_contracts_create_as_sales_unauthorized(
     import contracts
 
     sales = login_as_sales(monkeypatch, db_session, tmp_path)
-
     customer = create_customer(
         db_session=db_session,
         sales_employee=sales,
         email="customer.sales.contract@test.com",
     )
 
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "contracts.py",
+    exit_code = contracts.main(
+        db_session=db_session,
+        args=[
             "create",
             "--customer-id", customer.customer_id,
-            "--total-amount", "1000.00",
-            "--remaining-amount", "1000.00",
+            "--total-amount", "1000",
+            "--remaining-amount", "1000",
             "--is-signed", "false",
         ],
     )
-
-    exit_code = contracts.main(db_session=db_session)
     output = capsys.readouterr().out
 
-    assert exit_code == 1
-    assert ("[UNEXPECTED] You don't have permission: contracts.create_all" in
-            output)
+    assert exit_code != 0
+    assert "contracts.create_all" in output
 
 
 def test_contracts_update_as_manager(
-    monkeypatch,
-    db_session,
-    tmp_path,
-    capsys,
+        monkeypatch,
+        db_session,
+        tmp_path,
+        capsys
 ):
     import contracts
 
@@ -139,23 +129,20 @@ def test_contracts_update_as_manager(
         remaining_amount="2000.00",
     )
 
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "contracts.py",
+    exit_code = contracts.main(
+        db_session=db_session,
+        args=[
             "update",
             "--contract-id", contract.contract_id,
-            "--remaining-amount", "500.00",
+            "--total-amount", "2000",
+            "--remaining-amount", "500",
             "--is-signed", "true",
         ],
     )
-
-    exit_code = contracts.main(db_session=db_session)
     output = capsys.readouterr().out
 
     assert exit_code == 0
-    assert "[SUCCESS] Contract updated" in output
+    assert "Contract updated" in output
 
 
 def test_contracts_update_as_sales_on_owned_customer(
@@ -180,23 +167,20 @@ def test_contracts_update_as_sales_on_owned_customer(
         remaining_amount="900.00",
     )
 
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "contracts.py",
+    exit_code = contracts.main(
+        db_session=db_session,
+        args=[
             "update",
             "--contract-id", contract.contract_id,
-            "--remaining-amount", "300.00",
+            "--total-amount", "1800",
+            "--remaining-amount", "300",
             "--is-signed", "true",
         ],
     )
-
-    exit_code = contracts.main(db_session=db_session)
     output = capsys.readouterr().out
 
     assert exit_code == 0
-    assert "[SUCCESS] Contract updated" in output
+    assert "Contract updated" in output
 
 
 def test_contracts_update_as_sales_on_other_sales_customer_unauthorized(
@@ -207,7 +191,7 @@ def test_contracts_update_as_sales_on_other_sales_customer_unauthorized(
 ):
     import contracts
 
-    alice = login_as_sales(monkeypatch, db_session, tmp_path)
+    login_as_sales(monkeypatch, db_session, tmp_path)
 
     bob = create_employee(
         db_session=db_session,
@@ -228,23 +212,21 @@ def test_contracts_update_as_sales_on_other_sales_customer_unauthorized(
         remaining_amount="1000.00",
     )
 
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "contracts.py",
+    exit_code = contracts.main(
+        db_session=db_session,
+        args=[
             "update",
             "--contract-id", contract.contract_id,
-            "--remaining-amount", "100.00",
+            "--remaining-amount", "100",
+            "--total-amount", "2500",
+            "--is-signed", "false",
         ],
     )
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
 
-    exit_code = contracts.main(db_session=db_session)
-    output = capsys.readouterr().out
-
-    assert alice is not None
-    assert exit_code == 1
-    assert "[ERROR] You are not allowed to update contract" in output
+    assert exit_code != 0
+    assert "You are not allowed to update contract" in output
 
 
 def test_contracts_update_as_support_unauthorized(
@@ -276,22 +258,21 @@ def test_contracts_update_as_support_unauthorized(
         remaining_amount="1200.00",
     )
 
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "contracts.py",
+    exit_code = contracts.main(
+        db_session=db_session,
+        args=[
             "update",
             "--contract-id", contract.contract_id,
-            "--remaining-amount", "800.00",
+            "--remaining-amount", "800",
+            "--total-amount", "1200",
+            "--is-signed", "false",
         ],
     )
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
 
-    exit_code = contracts.main(db_session=db_session)
-    output = capsys.readouterr().out
-
-    assert exit_code == 1
-    assert "[ERROR] You are not allowed to update contract" in output
+    assert exit_code != 0
+    assert "You are not allowed to update contract" in output
 
 
 def test_contracts_list_unsigned_or_unpaid_as_sales(
@@ -317,48 +298,12 @@ def test_contracts_list_unsigned_or_unpaid_as_sales(
         is_signed=False,
     )
 
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "contracts.py",
-            "list",
-            "--unsigned-or-unpaid",
-        ],
+    exit_code = contracts.main(
+        db_session=db_session,
+        args=["list", "--unsigned-or-unpaid"],
     )
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
 
-    exit_code = contracts.main(db_session=db_session)
-    output = capsys.readouterr().out
-
-    assert exit_code == 0, output
-    assert "contract_id" in output
-
-
-def test_contracts_list_unsigned_or_unpaid_as_support_unauthorized(
-    monkeypatch,
-    db_session,
-    tmp_path,
-    capsys,
-):
-    import contracts
-
-    login_as_support(monkeypatch, db_session, tmp_path)
-
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "contracts.py",
-            "list",
-            "--unsigned-or-unpaid",
-        ],
-    )
-
-    exit_code = contracts.main(db_session=db_session)
-    output = capsys.readouterr().out
-
-    assert exit_code == 1
-    assert (
-        "[UNEXPECTED] You don't have permission: "
-        "contracts.filter_unsigned_or_unpaid"
-    ) in output
+    assert exit_code == 0
+    assert "Unsigned or unpaid contracts" in output

@@ -1,48 +1,11 @@
-import argparse
-
-from cli.printers import print_collection, print_success, print_row
-from cli.verificators import permission_required, login_required, \
-    handle_cli_errors
-from database.session import SessionLocal
-from security import has_permission, AuthorizationError
-from security.permissions import PERM_CONTRACTS_READ_ALL, \
-    PERM_CONTRACTS_FILTER_UNSIGNED_OR_UNPAID, PERM_CONTRACTS_CREATE_ALL
+import click
+from cli.printers import print_collection, print_row, print_success
+from cli.verificators import run_click_app, require_login, require_permission
+from security.permissions import (
+    PERM_CONTRACTS_READ_ALL, PERM_CONTRACTS_FILTER_UNSIGNED_OR_UNPAID,
+    PERM_CONTRACTS_CREATE_ALL,
+)
 from services.contract_service import ContractService
-
-
-def build_parser():
-    parser = argparse.ArgumentParser(prog="contracts.py")
-    subparsers = parser.add_subparsers(dest="command", required=True)
-
-    list_parser = subparsers.add_parser("list", help="list contracts")
-    list_parser.add_argument(
-        "--unsigned-or-unpaid",
-        action="store_true",
-        help="Filter unsigned or unpaid contracts",
-    )
-
-    get_parser = subparsers.add_parser("get", help="Get contract details")
-    get_parser.add_argument("--contract-id", required=True)
-
-    create_parser = subparsers.add_parser(
-        "create",
-        help="Create a new contract"
-    )
-    create_parser.add_argument("--customer-id", required=True)
-    create_parser.add_argument("--total-amount", required=True)
-    create_parser.add_argument("--remaining-amount", required=True)
-    create_parser.add_argument("--is-signed", choices=["true", "false"])
-
-    update_parser = subparsers.add_parser(
-        "update",
-        help="Update contract details"
-    )
-    update_parser.add_argument("--contract-id", required=True)
-    update_parser.add_argument("--total-amount")
-    update_parser.add_argument("--remaining-amount")
-    update_parser.add_argument("--is-signed", choices=["true", "false"])
-
-    return parser
 
 
 def contract_to_dict(contract):
@@ -52,106 +15,147 @@ def contract_to_dict(contract):
         "customer_name": contract.customer.full_name if contract.customer
         else None,
         "sales_id": contract.customer.sales_id if contract.customer else None,
+        "sales_name": contract.customer.sales.full_name if contract.customer
+        else None,
         "total_amount": contract.total_amount,
         "remaining_amount": contract.remaining_amount,
         "is_signed": contract.is_signed,
     }
 
 
-@permission_required(PERM_CONTRACTS_READ_ALL)
-def handle_list(args, current_employee=None, db_session=None):
-    if (
-        args.unsigned_or_unpaid
-        and not has_permission(
-            current_employee,
-            PERM_CONTRACTS_FILTER_UNSIGNED_OR_UNPAID,
-        )
-    ):
-        raise AuthorizationError(
-            f"You don't have permission: "
-            f"{PERM_CONTRACTS_FILTER_UNSIGNED_OR_UNPAID}"
-        )
+@click.group(help="Manage contracts.")
+@click.pass_context
+def cli(ctx):
+    ctx.ensure_object(dict)
 
-    service = ContractService(db_session)
+
+@cli.command("list", help="List all contracts.")
+@click.option("--unsigned-or-unpaid", is_flag=True, default=False)
+@click.pass_context
+def list_contracts(ctx, unsigned_or_unpaid):
+    current_employee = require_permission(ctx, PERM_CONTRACTS_READ_ALL)
+    service = ContractService(ctx.obj["db_session"])
+
+    if unsigned_or_unpaid:
+        require_permission(ctx, PERM_CONTRACTS_FILTER_UNSIGNED_OR_UNPAID)
+        contracts = service.list_unsigned_or_unpaid_contracts(current_employee)
+        print_collection(
+            [contract_to_dict(contract) for contract in contracts],
+            title="Unsigned or unpaid contracts",
+        )
+        return
+
     contracts = service.list_contracts()
-    print_collection([contract_to_dict(contract) for contract in contracts])
-    return 0
+    print_collection(
+        [contract_to_dict(contract) for contract in contracts],
+        title="Contracts",
+    )
 
 
-@permission_required(PERM_CONTRACTS_READ_ALL)
-def handle_get(contract_id, db_session=None):
-    service = ContractService(db_session)
+@cli.command("get", help="Display a contract.")
+@click.option("--contract-id", prompt=True, required=True)
+@click.pass_context
+def get_contract(ctx, contract_id):
+    require_permission(ctx, PERM_CONTRACTS_READ_ALL)
+    service = ContractService(ctx.obj["db_session"])
     contract = service.get_contract(contract_id)
-    print_row(contract_to_dict(contract))
-    return 0
+    print_row(contract_to_dict(contract), title="Contract")
 
 
-@permission_required(PERM_CONTRACTS_CREATE_ALL)
-def handle_create(args, current_employee=None, db_session=None):
-    service = ContractService(db_session)
-    is_signed = None
-    if args.is_signed is not None:
-        is_signed = args.is_signed == "true"
-
+@cli.command("create", help="Create a contract.")
+@click.option("--customer-id", prompt=True, required=True)
+@click.option("--total-amount", prompt=True, required=True, type=float)
+@click.option("--remaining-amount", prompt=True, required=True, type=float)
+@click.option(
+    "--is-signed",
+    type=click.Choice(["true", "false"]),
+    prompt=True,
+    required=False,
+    default="false",
+    show_default=True,
+)
+@click.pass_context
+def create_contract(
+        ctx,
+        customer_id,
+        total_amount,
+        remaining_amount,
+        is_signed
+):
+    current_employee = require_permission(ctx, PERM_CONTRACTS_CREATE_ALL)
+    service = ContractService(ctx.obj["db_session"])
     contract = service.create_contract(
         current_employee=current_employee,
-        customer_id=args.customer_id,
-        total_amount=args.total_amount,
-        remaining_amount=args.remaining_amount,
-        is_signed=is_signed,
+        customer_id=customer_id,
+        total_amount=total_amount,
+        remaining_amount=remaining_amount,
+        is_signed=(is_signed == "true"),
     )
-    print_success(
-        f"Contract created: {contract.contract_id}"
-        f" (customer: {contract.customers_id})"
-    )
-    return 0
+    print_success(f"Contract created: {contract.contract_id}")
 
 
-@login_required
-def handle_update(args, current_employee=None, db_session=None):
-    service = ContractService(db_session)
-    is_signed = None
-    if args.is_signed is not None:
-        is_signed = args.is_signed == "true"
+@cli.command("update", help="Update a contract.")
+@click.option("--contract-id", prompt=True, required=True)
+@click.option("--total-amount", required=False, type=float)
+@click.option("--remaining-amount", required=False, type=float)
+@click.option(
+    "--is-signed",
+    required=False,
+    type=click.Choice(["true", "false"])
+)
+@click.pass_context
+def update_contract(
+        ctx,
+        contract_id,
+        total_amount,
+        remaining_amount,
+        is_signed
+):
+    current_employee = require_login(ctx)
+    service = ContractService(ctx.obj["db_session"])
+    current = service.get_contract(contract_id)
+
+    if total_amount is None:
+        total_amount = click.prompt(
+            "Total amount",
+            default=float(current.total_amount),
+            type=float,
+            show_default=True,
+        )
+
+    if remaining_amount is None:
+        remaining_amount = click.prompt(
+            "Remaining amount",
+            default=float(current.remaining_amount),
+            type=float,
+            show_default=True,
+        )
+
+    if is_signed is None:
+        is_signed = click.prompt(
+            "Is signed",
+            type=click.Choice(["true", "false"]),
+            default="true" if current.is_signed else "false",
+            show_default=True,
+        )
 
     contract = service.update_contract(
-        contract_id=args.contract_id,
         current_employee=current_employee,
-        total_amount=args.total_amount,
-        remaining_amount=args.remaining_amount,
-        is_signed=is_signed,
+        contract_id=contract_id,
+        total_amount=total_amount,
+        remaining_amount=remaining_amount,
+        is_signed=(is_signed == "true"),
     )
     print_success(f"Contract updated: {contract.contract_id}")
-    return 0
 
 
-@handle_cli_errors
-def main(db_session=None):
-    parser = build_parser()
-    args = parser.parse_args()
-
-    created_session = False
-    if db_session is None:
-        db_session = SessionLocal()
-        created_session = True
-
-    try:
-        if args.command == "list":
-            return handle_list(args, db_session=db_session)
-
-        if args.command == "get":
-            return handle_get(args.contract_id, db_session=db_session)
-
-        if args.command == "create":
-            return handle_create(args, db_session=db_session)
-
-        if args.command == "update":
-            return handle_update(args, db_session=db_session)
-
-        return 1
-    finally:
-        if created_session:
-            db_session.close()
+def main(db_session=None, args=None):
+    return run_click_app(
+        cli,
+        db_session=db_session,
+        args=args,
+        prog_name="contracts.py",
+    )
 
 
 if __name__ == "__main__":

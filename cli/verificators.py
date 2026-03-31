@@ -1,51 +1,59 @@
-from functools import wraps
+import click
 from cli.context import get_current_employee, CliAuthenticationError
+from cli.printers import print_forbidden, print_error
+from database.session import SessionLocal
 from security import has_permission, AuthorizationError
 
 
-def login_required(func):
-    """ Decorator to check if the user is logged in. """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        db_session = kwargs.get("db_session")
-        employee = get_current_employee(db_session=db_session)
-        kwargs["current_employee"] = employee
-        return func(*args, **kwargs)
-    return wrapper
+def get_db_session(ctx):
+    return ctx.obj["db_session"]
 
 
-def permission_required(permission_code):
-    """ Decorator to check if the user has permission to the requested
-    resource. """
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            db_session = kwargs.get("db_session")
-            employee = get_current_employee(db_session=db_session)
-
-            if not has_permission(employee, permission_code):
-                raise AuthorizationError(
-                    f"You don't have permission: {permission_code}"
-                )
-            kwargs["current_employee"] = employee
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
+def require_login(ctx):
+    return get_current_employee(db_session=get_db_session(ctx))
 
 
-def handle_cli_errors(func):
-    """ Decorator to handle CLI errors. """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except CliAuthenticationError as e:
-            print(f"[FORBIDDEN] {e}")
-            return 1
-        except ValueError as e:
-            print(f"[ERROR] {e}")
-            return 1
-        except Exception as e:
-            print(f"[UNEXPECTED] {e}")
-            return 1
-    return wrapper
+def require_permission(ctx, permission_code):
+    employee = require_login(ctx)
+
+    if not has_permission(employee, permission_code):
+        raise AuthorizationError(
+            f"You don't have permission: {permission_code}"
+        )
+
+    return employee
+
+
+def run_click_app(app, db_session=None, args=None, prog_name=None):
+    created_session = False
+
+    if db_session is None:
+        db_session = SessionLocal()
+        created_session = True
+
+    try:
+        app.main(
+            args=args,
+            prog_name=prog_name,
+            obj={"db_session": db_session},
+            standalone_mode=False,
+        )
+        return 0
+    except CliAuthenticationError as exception:
+        print_forbidden(str(exception))
+        return 1
+    except AuthorizationError as exception:
+        print_forbidden(str(exception))
+        return 1
+    except click.ClickException as exception:
+        print_error(exception.format_message())
+        return 1
+    except ValueError as exception:
+        print_error(str(exception))
+        return 1
+    except Exception as exception:
+        print_error(f"Unexpected error: {exception}")
+        return 1
+    finally:
+        if created_session:
+            db_session.close()

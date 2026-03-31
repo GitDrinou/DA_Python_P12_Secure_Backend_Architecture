@@ -1,49 +1,19 @@
-import argparse
-from cli.printers import print_collection, print_success, print_row
-from cli.verificators import permission_required, handle_cli_errors
-from database.session import SessionLocal
-from security.permissions import PERM_EMPLOYEES_READ_ALL, \
-    PERM_EMPLOYEES_CREATE, PERM_EMPLOYEES_UPDATE, PERM_EMPLOYEES_DELETE
+import click
+from cli.printers import print_collection, print_row, print_success
+from cli.verificators import run_click_app, require_permission
+from security.permissions import (
+    PERM_EMPLOYEES_READ_ALL, PERM_EMPLOYEES_CREATE, PERM_EMPLOYEES_UPDATE,
+    PERM_EMPLOYEES_DELETE, ROLE_ADMIN, ROLE_MANAGEMENT, ROLE_SALES,
+    ROLE_SUPPORT,
+)
 from services.employee_service import EmployeeService
 
 
-def build_parser():
-    parser = argparse.ArgumentParser(prog="employees.py")
-    subparsers = parser.add_subparsers(dest="command", required=True)
-
-    subparsers.add_parser("list", help="List employees")
-
-    get_parser = subparsers.add_parser("get", help="Get employee details")
-    get_parser.add_argument("--employee-id", required=True)
-
-    create_parser = subparsers.add_parser(
-        "create",
-        help="Create a new employee"
-    )
-    create_parser.add_argument("--full-name", required=True)
-    create_parser.add_argument("--email", required=True)
-    create_parser.add_argument("--password", required=True)
-    create_parser.add_argument("--role", required=True)
-    create_parser.add_argument("--inactive", action="store_true")
-
-    update_parser = subparsers.add_parser(
-        "update",
-        help="Update an employee"
-    )
-    update_parser.add_argument("--employee-id", required=True)
-    update_parser.add_argument("--full-name")
-    update_parser.add_argument("--email")
-    update_parser.add_argument("--password")
-    update_parser.add_argument("--role")
-    update_parser.add_argument("--is-active", choices=["true", "false"])
-
-    delete_parser = subparsers.add_parser(
-        "delete",
-        help="Delete an employee"
-    )
-    delete_parser.add_argument("--employee-id", required=True)
-
-    return parser
+ROLE_CHOICES = click.Choice([
+    ROLE_ADMIN,
+    ROLE_MANAGEMENT,
+    ROLE_SALES, ROLE_SUPPORT
+])
 
 
 def employee_to_dict(employee):
@@ -56,103 +26,176 @@ def employee_to_dict(employee):
     }
 
 
-@permission_required(PERM_EMPLOYEES_READ_ALL)
-def handle_list(current_employee=None, db_session=None):
-    service = EmployeeService(db_session)
+@click.group(help="Manage employees.")
+@click.pass_context
+def cli(ctx):
+    ctx.ensure_object(dict)
+
+
+@cli.command("list", help="List all employees.")
+@click.pass_context
+def list_employees(ctx):
+    require_permission(ctx, PERM_EMPLOYEES_READ_ALL)
+    service = EmployeeService(ctx.obj["db_session"])
     employees = service.list_employees()
-    print_collection([employee_to_dict(emp) for emp in employees])
-    return 0
+    print_collection(
+        [employee_to_dict(employee) for employee in employees],
+        title="Employees",
+    )
 
 
-@permission_required(PERM_EMPLOYEES_READ_ALL)
-def handle_get(employee_id, current_employee=None, db_session=None):
-    service = EmployeeService(db_session)
+@cli.command("get", help="Display an employee.")
+@click.option("--employee-id", prompt=True, required=True)
+@click.pass_context
+def get_employee(ctx, employee_id):
+    require_permission(ctx, PERM_EMPLOYEES_READ_ALL)
+    service = EmployeeService(ctx.obj["db_session"])
     employee = service.get_employee(employee_id)
-    print_row(employee_to_dict(employee))
-    return 0
+    print_row(employee_to_dict(employee), title="Employee")
 
 
-@permission_required(PERM_EMPLOYEES_CREATE)
-def handle_create(args, current_employee=None, db_session=None):
-    service = EmployeeService(db_session)
+@cli.command("create", help="Create an employee.")
+@click.option("--full-name", prompt=True, required=True)
+@click.option("--email", prompt=True, required=True)
+@click.option(
+    "--password",
+    prompt=True,
+    hide_input=True,
+    confirmation_prompt=True,
+    required=True,
+)
+@click.option(
+    "--role",
+    "role_name",
+    type=ROLE_CHOICES,
+    prompt=True,
+    required=True
+)
+@click.option(
+    "--inactive",
+    is_flag=True,
+    default=False,
+    help="Create employee as inactive."
+)
+@click.pass_context
+def create_employee(ctx, full_name, email, password, role_name, inactive):
+    current_employee = require_permission(ctx, PERM_EMPLOYEES_CREATE)
+    service = EmployeeService(ctx.obj["db_session"])
     employee = service.create_employee(
         current_employee=current_employee,
-        full_name=args.full_name,
-        email=args.email,
-        password=args.password,
-        role_name=args.role,
-        is_active=not args.inactive,
+        full_name=full_name,
+        email=email,
+        password=password,
+        role_name=role_name,
+        is_active=not inactive,
     )
     print_success(
-        f"Employee created: {employee.full_name} (id:"
-        f" {employee.employee_id})")
-    return 0
+        f"Employee created: {employee.full_name} ({employee.employee_id})"
+    )
 
 
-@permission_required(PERM_EMPLOYEES_UPDATE)
-def handle_update(args, current_employee=None, db_session=None):
-    service = EmployeeService(db_session)
-    is_active = None
-    if args.is_active is not None:
-        is_active = args.is_active == "true"
+@cli.command("update", help="Update an employee.")
+@click.option("--employee-id", prompt=True, required=True)
+@click.option("--full-name", required=False)
+@click.option("--email", required=False)
+@click.option("--password", required=False, hide_input=True)
+@click.option("--role", "role_name", type=ROLE_CHOICES, required=False)
+@click.option(
+    "--is-active",
+    type=click.Choice(["true", "false"]),
+    required=False
+)
+@click.pass_context
+def update_employee(
+        ctx,
+        employee_id,
+        full_name,
+        email,
+        password,
+        role_name,
+        is_active
+):
+    current_employee = require_permission(ctx, PERM_EMPLOYEES_UPDATE)
+    service = EmployeeService(ctx.obj["db_session"])
+    current = service.get_employee(employee_id)
+
+    if full_name is None:
+        full_name = click.prompt(
+            "Full name",
+            default=current.full_name,
+            show_default=True
+        )
+
+    if email is None:
+        email = click.prompt(
+            "Email",
+            default=current.email,
+            show_default=True
+        )
+
+    if password is None:
+        change_password = click.confirm("Change password?", default=False)
+        if change_password:
+            password = click.prompt(
+                "New password",
+                hide_input=True,
+                confirmation_prompt=True,
+            )
+
+    if role_name is None:
+        role_name = click.prompt(
+            "Role",
+            type=ROLE_CHOICES,
+            default=current.role.name,
+            show_default=True,
+        )
+
+    if is_active is None:
+        is_active = "true" if current.is_active else "false"
+        is_active = click.prompt(
+            "Is active",
+            type=click.Choice(["true", "false"]),
+            default=is_active,
+            show_default=True,
+        )
 
     employee = service.update_employee(
         current_employee=current_employee,
-        employee_id=args.employee_id,
-        full_name=args.full_name,
-        email=args.email,
-        password=args.password,
-        role_name=args.role,
-        is_active=is_active,
+        employee_id=employee_id,
+        full_name=full_name,
+        email=email,
+        password=password,
+        role_name=role_name,
+        is_active=(is_active == "true"),
     )
     print_success(
-        f"Employee updated: {employee.full_name}"
-        f"(id: {employee.employee_id})"
+        f"Employee updated: {employee.full_name} ({employee.employee_id})"
     )
-    return 0
 
 
-@permission_required(PERM_EMPLOYEES_DELETE)
-def handle_delete(employee_id, current_employee=None, db_session=None):
-    service = EmployeeService(db_session)
+@cli.command("delete", help="Delete an employee.")
+@click.option("--employee-id", prompt=True, required=True)
+@click.confirmation_option(
+    prompt="Do you really want to delete this employee ?"
+)
+@click.pass_context
+def delete_employee(ctx, employee_id):
+    current_employee = require_permission(ctx, PERM_EMPLOYEES_DELETE)
+    service = EmployeeService(ctx.obj["db_session"])
     service.delete_employee(
         current_employee=current_employee,
-        employee_id=employee_id
+        employee_id=employee_id,
     )
     print_success("Employee deleted")
-    return 0
 
 
-@handle_cli_errors
-def main(db_session=None):
-    parser = build_parser()
-    args = parser.parse_args()
-
-    created_session = False
-    if db_session is None:
-        db_session = SessionLocal()
-        created_session = True
-
-    try:
-        if args.command == "list":
-            return handle_list(db_session=db_session)
-
-        if args.command == "get":
-            return handle_get(args.employee_id, db_session=db_session)
-
-        if args.command == "create":
-            return handle_create(args, db_session=db_session)
-
-        if args.command == "update":
-            return handle_update(args, db_session=db_session)
-
-        if args.command == "delete":
-            return handle_delete(args.employee_id, db_session=db_session)
-
-        return 1
-    finally:
-        if created_session:
-            db_session.close()
+def main(db_session=None, args=None):
+    return run_click_app(
+        cli,
+        db_session=db_session,
+        args=args,
+        prog_name="employees.py",
+    )
 
 
 if __name__ == "__main__":

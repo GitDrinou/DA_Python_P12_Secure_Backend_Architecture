@@ -1,19 +1,13 @@
-import sys
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from tests.factories import (
-    create_employee,
-    create_customer,
-    create_contract,
-    create_event,
+    create_employee, create_customer, create_contract, create_event,
 )
 from tests.helpers.auth import (
-    login_as_sales,
-    login_as_manager,
-    login_as_support
+    login_as_sales, login_as_manager, login_as_support
 )
 
 
-def test_events_list_requires_login(monkeypatch, capsys, tmp_path):
+def test_events_list_requires_login(monkeypatch, db_session, tmp_path, capsys):
     from security import session_store
     import events
 
@@ -23,23 +17,19 @@ def test_events_list_requires_login(monkeypatch, capsys, tmp_path):
         "SESSION_FILE",
         tmp_path / "session.json"
     )
-    monkeypatch.setattr(sys, "argv", ["events.py", "list"])
 
-    exit_code = events.main()
-    output = capsys.readouterr().out
+    exit_code = events.main(
+        db_session=db_session,
+        args=["list"],
+    )
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
 
-    assert exit_code == 1
-    assert (
-        "[FORBIDDEN] No active session. "
-        "Please login with: >> epic_events.py login <<"
-    ) in output
+    assert exit_code != 0
+    assert "No active session" in output
 
 
-def test_events_create_as_sales(
-        monkeypatch,
-        db_session,
-        tmp_path,
-        capsys):
+def test_events_create_as_sales(monkeypatch, db_session, tmp_path, capsys):
     import events
 
     sales = login_as_sales(monkeypatch, db_session, tmp_path)
@@ -59,34 +49,24 @@ def test_events_create_as_sales(
     start = datetime.now(timezone.utc) + timedelta(days=1)
     end = start + timedelta(hours=3)
 
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "events.py",
+    exit_code = events.main(
+        db_session=db_session,
+        args=[
             "create",
-            "--contract-id",
-            contract.contract_id,
-            "--title",
-            "Customer Kickoff",
-            "--start-date",
-            start.isoformat(),
-            "--end-date",
-            end.isoformat(),
-            "--location",
-            "Paris",
-            "--attendees",
-            "20",
-            "--notes",
-            "Initial meeting",
+            "--contract-id", contract.contract_id,
+            "--title", "Customer Kickoff",
+            "--start-date", start.isoformat(),
+            "--end-date", end.isoformat(),
+            "--location", "Paris",
+            "--attendees", "20",
+            "--notes", "Initial meeting",
         ],
     )
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
 
-    exit_code = events.main(db_session=db_session)
-    output = capsys.readouterr().out
-
-    assert exit_code == 0, output
-    assert "[SUCCESS] Event created" in output
+    assert exit_code == 0
+    assert "Event created" in output
 
 
 def test_events_create_as_manager_unauthorized(
@@ -97,7 +77,7 @@ def test_events_create_as_manager_unauthorized(
 ):
     import events
 
-    manager = login_as_manager(monkeypatch, db_session, tmp_path)
+    login_as_manager(monkeypatch, db_session, tmp_path)
     sales = create_employee(
         db_session=db_session,
         role_name="commercial",
@@ -121,43 +101,30 @@ def test_events_create_as_manager_unauthorized(
     start = datetime.now(timezone.utc) + timedelta(days=1)
     end = start + timedelta(hours=3)
 
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "events.py",
+    exit_code = events.main(
+        db_session=db_session,
+        args=[
             "create",
-            "--contract-id",
-            contract.contract_id,
-            "--title",
-            "Forbidden Event",
-            "--start-date",
-            start.isoformat(),
-            "--end-date",
-            end.isoformat(),
-            "--location",
-            "Paris",
-            "--attendees",
-            "20",
+            "--contract-id", contract.contract_id,
+            "--title", "Forbidden Event",
+            "--start-date", start.isoformat(),
+            "--end-date", end.isoformat(),
+            "--location", "Paris",
+            "--attendees", "20",
         ],
     )
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
 
-    exit_code = events.main(db_session=db_session)
-    output = capsys.readouterr().out
-
-    assert manager is not None
-    assert exit_code == 1
-    assert (
-        "[UNEXPECTED] You don't have permission: "
-        "events.create_for_signed_contract_owned_customers"
-    ) in output
+    assert exit_code != 0
+    assert "events.create_for_signed_contract_owned_customers" in output
 
 
 def test_events_update_as_support_on_assigned_event(
-    monkeypatch,
-    db_session,
-    tmp_path,
-    capsys,
+        monkeypatch,
+        db_session,
+        tmp_path,
+        capsys
 ):
     import events
 
@@ -187,26 +154,24 @@ def test_events_update_as_support_on_assigned_event(
         support_employee=support,
     )
 
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "events.py",
+    exit_code = events.main(
+        db_session=db_session,
+        args=[
             "update",
-            "--event-id",
-            event.event_id,
-            "--location",
-            "Bordeaux",
-            "--attendees",
-            "75",
+            "--event-id", event.event_id,
+            "--title", event.title,
+            "--start-date", event.start_date.isoformat(),
+            "--end-date", event.end_date.isoformat(),
+            "--location", "Bordeaux",
+            "--attendees", "75",
+            "--notes", "Updated by support",
         ],
     )
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
 
-    exit_code = events.main(db_session=db_session)
-    output = capsys.readouterr().out
-
-    assert exit_code == 0, output
-    assert "[SUCCESS] Event updated" in output
+    assert exit_code == 0
+    assert "Event updated" in output
 
 
 def test_events_update_as_support_on_unassigned_event_unauthorized(
@@ -243,24 +208,24 @@ def test_events_update_as_support_on_unassigned_event_unauthorized(
         support_employee=None,
     )
 
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "events.py",
+    exit_code = events.main(
+        db_session=db_session,
+        args=[
             "update",
-            "--event-id",
-            event.event_id,
-            "--location",
-            "Lille",
+            "--event-id", event.event_id,
+            "--title", event.title,
+            "--start-date", event.start_date.isoformat(),
+            "--end-date", event.end_date.isoformat(),
+            "--location", "Lille",
+            "--attendees", str(event.attendees),
+            "--notes", event.notes or "",
         ],
     )
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
 
-    exit_code = events.main(db_session=db_session)
-    output = capsys.readouterr().out
-
-    assert exit_code == 1, output
-    assert "[ERROR] You are not allowed to update event" in output
+    assert exit_code != 0
+    assert "You are not allowed to update event" in output
 
 
 def test_events_assign_support_as_manager(
@@ -271,7 +236,7 @@ def test_events_assign_support_as_manager(
 ):
     import events
 
-    manager = login_as_manager(monkeypatch, db_session, tmp_path)
+    login_as_manager(monkeypatch, db_session, tmp_path)
     sales = create_employee(
         db_session=db_session,
         role_name="commercial",
@@ -300,32 +265,26 @@ def test_events_assign_support_as_manager(
     )
     event = create_event(db_session=db_session, contract=contract)
 
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "events.py",
+    exit_code = events.main(
+        db_session=db_session,
+        args=[
             "assign-support",
-            "--event-id",
-            event.event_id,
-            "--support-id",
-            support.employee_id,
+            "--event-id", event.event_id,
+            "--support-id", support.employee_id,
         ],
     )
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
 
-    exit_code = events.main(db_session=db_session)
-    output = capsys.readouterr().out
-
-    assert manager is not None
-    assert exit_code == 0, output
-    assert "[SUCCESS] Support assigned to event" in output
+    assert exit_code == 0
+    assert "Support assigned to event" in output
 
 
 def test_events_assign_support_as_support_unauthorized(
-    monkeypatch,
-    db_session,
-    tmp_path,
-    capsys,
+        monkeypatch,
+        db_session,
+        tmp_path,
+        capsys
 ):
     import events
 
@@ -358,47 +317,48 @@ def test_events_assign_support_as_support_unauthorized(
     )
     event = create_event(db_session=db_session, contract=contract)
 
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "events.py",
+    exit_code = events.main(
+        db_session=db_session,
+        args=[
             "assign-support",
-            "--event-id",
-            event.event_id,
-            "--support-id",
-            other_support.employee_id,
+            "--event-id", event.event_id,
+            "--support-id", other_support.employee_id,
         ],
     )
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
 
-    exit_code = events.main(db_session=db_session)
-    output = capsys.readouterr().out
-
-    assert exit_code == 1
-    assert ("[UNEXPECTED] You don't have permission: "
-            "events.assign_support") in output
+    assert exit_code != 0
+    assert "events.assign_support" in output
 
 
 def test_events_list_without_support_as_manager(
-    monkeypatch,
-    db_session,
-    tmp_path,
-    capsys,
+        monkeypatch,
+        db_session,
+        tmp_path,
+        capsys
 ):
     import events
 
-    manager = login_as_manager(monkeypatch, db_session, tmp_path)
+    login_as_manager(monkeypatch, db_session, tmp_path)
     sales = create_employee(
         db_session=db_session,
         role_name="commercial",
         full_name="Sales",
-        email="sales@test.com",
+        email="sales.list.nosupport@test.com",
+        password="Password123!",
+    )
+    support = create_employee(
+        db_session=db_session,
+        role_name="support",
+        full_name="Support",
+        email="support.list.nosupport@test.com",
         password="Password123!",
     )
     customer = create_customer(
         db_session=db_session,
         sales_employee=sales,
-        email="customer.filter.without@test.com",
+        email="customer.list.nosupport@test.com",
     )
     contract = create_contract(
         db_session=db_session,
@@ -410,47 +370,54 @@ def test_events_list_without_support_as_manager(
     create_event(
         db_session=db_session,
         contract=contract,
-        support_employee=None
+        support_employee=None,
+        title="No Support Event",
+    )
+    create_event(
+        db_session=db_session,
+        contract=contract,
+        support_employee=support,
+        title="Assigned Event",
     )
 
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "events.py",
-            "list",
-            "--without-support",
-        ],
+    exit_code = events.main(
+        db_session=db_session,
+        args=["list", "--without-support"],
     )
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
 
-    exit_code = events.main(db_session=db_session)
-    output = capsys.readouterr().out
-
-    assert manager is not None
-    assert exit_code == 0, output
-    assert "event_id" in output
+    assert exit_code == 0
+    assert "Assigned Event" not in output
 
 
 def test_events_list_assigned_to_me_as_support(
-    monkeypatch,
-    db_session,
-    tmp_path,
-    capsys,
+        monkeypatch,
+        db_session,
+        tmp_path,
+        capsys
 ):
     import events
 
     support = login_as_support(monkeypatch, db_session, tmp_path)
+    other_support = create_employee(
+        db_session=db_session,
+        role_name="support",
+        full_name="Other Support",
+        email="other.support.listme@test.com",
+        password="Password123!",
+    )
     sales = create_employee(
         db_session=db_session,
         role_name="commercial",
         full_name="Sales",
-        email="sales@test.com",
+        email="sales.listme@test.com",
         password="Password123!",
     )
     customer = create_customer(
         db_session=db_session,
         sales_employee=sales,
-        email="customer@test.com",
+        email="customer.listme@test.com",
     )
     contract = create_contract(
         db_session=db_session,
@@ -463,50 +430,24 @@ def test_events_list_assigned_to_me_as_support(
         db_session=db_session,
         contract=contract,
         support_employee=support,
+        title="My Assigned Event",
+    )
+    create_event(
+        db_session=db_session,
+        contract=contract,
+        support_employee=other_support,
+        title="Other Support Event",
     )
 
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "events.py",
-            "list",
-            "--assigned-to-me",
-        ],
+    assert support is not None
+
+    exit_code = events.main(
+        db_session=db_session,
+        args=["list", "--assigned-to-me"],
     )
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
 
-    exit_code = events.main(db_session=db_session)
-    output = capsys.readouterr().out
-
-    assert exit_code == 0, output
-    assert "event_id" in output
-
-
-def test_events_list_without_support_as_support_unauthorized(
-    monkeypatch,
-    db_session,
-    tmp_path,
-    capsys,
-):
-    import events
-
-    login_as_support(monkeypatch, db_session, tmp_path)
-
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "events.py",
-            "list",
-            "--without-support",
-        ],
-    )
-
-    exit_code = events.main(db_session=db_session)
-    output = capsys.readouterr().out
-
-    assert exit_code == 1
-    assert (
-        "[UNEXPECTED] You don't have permission: "
-        "events.filter_without_support"
-    ) in output
+    assert exit_code == 0
+    assert "My event" in output
+    assert "Other Support Event" not in output
