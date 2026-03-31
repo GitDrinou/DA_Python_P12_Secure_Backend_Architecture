@@ -15,7 +15,7 @@ def customer_to_dict(customer):
         "email": customer.email,
         "phone": customer.phone,
         "company_name": customer.company_name,
-        "sales_id": customer.sales_id,
+        "sales_name": customer.sales.full_name,
     }
 
 

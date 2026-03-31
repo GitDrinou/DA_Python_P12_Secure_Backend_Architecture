@@ -44,6 +44,7 @@ def list_permissions(ctx):
 
 
 @cli.command("get", help="Get a permission.")
+@click.option("--code", prompt=True, required=True)
 @click.pass_context
 def get_permission(ctx, code):
     require_permission(ctx, PERM_PERMISSIONS_READ_ALL)

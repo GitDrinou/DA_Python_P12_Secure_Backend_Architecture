@@ -11,15 +11,13 @@ from services.contract_service import ContractService
 def contract_to_dict(contract):
     return {
         "contract_id": contract.contract_id,
-        "customer_id": contract.customers_id,
         "customer_name": contract.customer.full_name if contract.customer
-        else None,
-        "sales_id": contract.customer.sales_id if contract.customer else None,
-        "sales_name": contract.customer.sales.full_name if contract.customer
         else None,
         "total_amount": contract.total_amount,
         "remaining_amount": contract.remaining_amount,
         "is_signed": contract.is_signed,
+        "sales_name": contract.customer.sales.full_name if contract.customer
+        else None,
     }
 
 

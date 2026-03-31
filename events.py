@@ -33,15 +33,14 @@ def event_to_dict(event):
         "end_date": event.end_date,
         "location": event.location,
         "attendees": event.attendees,
-        "notes": event.notes,
         "contract_id": event.contract_id,
         "customer_name": (
             event.contract.customer.full_name
             if event.contract and event.contract.customer
             else None
         ),
-        "support_id": event.support_id,
         "support_name": event.support.full_name if event.support else None,
+        "notes": event.notes,
     }
 
 
