@@ -1,17 +1,47 @@
 # Epic Events CRM (CLI)
-Command-line CRM built with:
-- Python
-- SQLAlchemy
-- MySQL
-- JWT Authentication
-- Service-based architecture
+## Project Overview
+Epic Events CRM is a secure command-line application designed to manage 
+clients, contracts, and events for the Epic Events company.
 
-This project allows to manage:
+The application is built with Python and follows secure backend development 
+practices, including role-based access control and structured logging.
+
+This application allows management of:
 - Employees
 - Customers
 - Contracts
 - Events
-- User authentication
+- Authentication & permissions
+
+The project follows secure backend architecture principles:
+- Role-based access control
+- JWT authentication
+- Service-based architecture
+- Logging and observability
+- Principle of least privilege
+
+## Project Architecture
+The project follows a Service-based layered architecture:
+1. Presentation Layer
+2. Business Logic Layer
+3. Data Access Layer
+4. Database
+### architecture Components
+- CLI > Handles user input and commands
+- Services > contains business logic
+- Permissions > role-based access control
+- Database > SQLAlchemy models & database configuration
+- Observability > error logging & monitoring
+
+## Features
+- Secure authentication (JWT)
+- Role-based permissions
+- Customer management
+- Contract management
+- Event management
+- Command-line interface
+- Logging & observability
+- Secure backend architecture
 
 ## Installation
 1. Clone the repository `git clone https://github.com/GitDrinou/DA_Python_P12_Secure_Backend_Architecture.git`
@@ -37,7 +67,43 @@ REFRESH_TOKEN_EXPIRE_DAYS=7
 ## Database initialization
 `python create_db.py`
 
-## CRM Commands
+## Roles & Permissions
+The application implements Role-Based Access Control (RBAC) 
+Three roles are available:
+### Management
+Management users have administrative permissions.
+#### Permissions
+- Create employees
+- Update employees
+- Delete employees
+- Create contracts
+- Update contracts
+- Assign support to events
+- View all data
+### Sales
+Sales users manage customers and contracts.
+#### Permissions
+- Create customers
+- Update their customers
+- Create contracts
+- Update contracts
+- Create events
+- View all data
+#### Restrictions
+- Cannot modify other sales customers
+- Cannot assign support staff
+### Support
+Support users manage events assigned to them.
+#### Permissions
+- View assigned events
+- Update assigned events
+- View all data
+#### Restrictions
+- Cannot create customers
+- Cannot create contracts
+- Cannot assign themselves
+
+## Usage / CRM Commands
 ### Authentification
 - Login `python epic_events.py login --email EMAIL --password PASSWORD`
 - Logout `python epic_events.py logout`
@@ -144,10 +210,37 @@ python events.py assign-support
     --support-id ID
 ```
 
-## Technologies
+## Application Workflow
+1. Sales creates customer 
+2. Management creates contract 
+3. Contract is signed 
+4. Sales creates event 
+5. Management assigns support 
+6. Support manages event
+
+## Security
+The application implements multiple security layers:
+### Authentication
+- JWT authentication
+- Token expiration
+- Secure login/logout
+### Authorization
+- Role-based access control
+- Principe of least privilege
+- Permission decorators
+### Database Security
+- SQLAlchemy ORM
+- Protection against SQL injection
+### Logging
+- Observability module
+- Exception tracking
+- Error logging
+
+## Tech Stack
 - Python
 - SQLAlchemy
 - MySQL
 - JWT
-- argparse
-- Service architecture
+- Argon 2
+- Click & Rich
+- Sentry
