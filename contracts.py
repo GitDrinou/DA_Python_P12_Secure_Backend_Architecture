@@ -3,7 +3,7 @@ from cli.printers import print_collection, print_row, print_success
 from cli.verificators import run_click_app, require_login, require_permission
 from security.permissions import (
     PERM_CONTRACTS_READ_ALL, PERM_CONTRACTS_FILTER_UNSIGNED_OR_UNPAID,
-    PERM_CONTRACTS_CREATE_ALL,
+    PERM_CONTRACTS_CREATE_ALL, PERM_CONTRACTS_DELETE_ALL,
 )
 from services.contract_service import ContractService
 
@@ -145,6 +145,22 @@ def update_contract(
         is_signed=(is_signed == "true"),
     )
     print_success(f"Contract updated: {contract.contract_id}")
+
+
+@cli.command("delete", help="Delete a contract.")
+@click.option("--contract-id", prompt=True, required=True)
+@click.confirmation_option(
+    prompt="Do you really want to delete this contract ?"
+)
+@click.pass_context
+def delete_contract(ctx, contract_id):
+    current_employee = require_permission(ctx, PERM_CONTRACTS_DELETE_ALL)
+    service = ContractService(ctx.obj["db_session"])
+    service.delete_contract(
+        current_employee=current_employee,
+        contract_id=contract_id,
+    )
+    print_success("Contract deleted")
 
 
 def main(db_session=None, args=None):

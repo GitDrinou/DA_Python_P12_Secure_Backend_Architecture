@@ -3,7 +3,7 @@ from decimal import Decimal
 from database.models import Contract, Customer
 from security import has_permission, can_update_contract
 from security.permissions import PERM_CONTRACTS_CREATE_ALL, \
-    PERM_CONTRACTS_FILTER_UNSIGNED_OR_UNPAID
+    PERM_CONTRACTS_FILTER_UNSIGNED_OR_UNPAID, PERM_CONTRACTS_DELETE_ALL
 
 
 class ContractService:
@@ -168,3 +168,19 @@ class ContractService:
         self.db_session.refresh(contract)
 
         return contract
+
+    def delete_contract(self, current_employee, contract_id):
+        """
+        Delete contract by contract id
+        Args:
+            current_employee (Employee): current employee object
+            contract_id (str): contract ident
+        """
+        if not has_permission(current_employee, PERM_CONTRACTS_DELETE_ALL):
+            raise ValueError("You are not allowed to delete contract")
+
+        contract = self.get_contract(contract_id)
+        self.db_session.delete(contract)
+        self.db_session.commit()
+
+        return True

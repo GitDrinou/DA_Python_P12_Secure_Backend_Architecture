@@ -6,7 +6,7 @@ from security.permissions import (
     PERM_EVENTS_READ_ALL, PERM_EVENTS_FILTER_WITHOUT_SUPPORT,
     PERM_EVENTS_FILTER_ASSIGNED_TO_ME,
     PERM_EVENTS_CREATE_FOR_SIGNED_CONTRACT_OWNED_CUSTOMERS,
-    PERM_EVENTS_ASSIGN_SUPPORT,
+    PERM_EVENTS_ASSIGN_SUPPORT, PERM_EVENTS_DELETE_OWNED_CUSTOMERS
 )
 from services.event_service import EventService
 
@@ -219,6 +219,25 @@ def assign_support(ctx, event_id, support_id):
         support_id=support_id,
     )
     print_success(f"Support assigned to event: {event.event_id}")
+
+
+@cli.command("delete", help="Delete an event.")
+@click.option("--event-id", prompt=True, required=True)
+@click.confirmation_option(
+    prompt="Do you really want to delete this event ?"
+)
+@click.pass_context
+def delete_event(ctx, event_id):
+    current_employee = require_permission(
+        ctx,
+        PERM_EVENTS_DELETE_OWNED_CUSTOMERS
+    )
+    service = EventService(ctx.obj["db_session"])
+    service.delete_event(
+        current_employee=current_employee,
+        event_id=event_id
+    )
+    print_success("Event deleted")
 
 
 def main(db_session=None, args=None):

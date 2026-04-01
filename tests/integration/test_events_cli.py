@@ -451,3 +451,41 @@ def test_events_list_assigned_to_me_as_support(
     assert exit_code == 0
     assert "My event" in output
     assert "Other Support Event" not in output
+
+
+def test_events_delete_as_sales(monkeypatch, db_session, tmp_path, capsys):
+    import events
+    from tests.factories import create_event
+
+    sales = login_as_sales(monkeypatch, db_session, tmp_path)
+    customer = create_customer(
+        db_session=db_session,
+        sales_employee=sales,
+        email="customer.listme@test.com",
+    )
+    contract = create_contract(
+        db_session=db_session,
+        customer=customer,
+        is_signed=True,
+        total_amount="1200.00",
+        remaining_amount="0.00",
+    )
+    event = create_event(
+        db_session=db_session,
+        contract=contract,
+        title="My Assigned Event",
+    )
+
+    exit_code = events.main(
+        db_session=db_session,
+        args=[
+            "delete",
+            "--event-id", event.event_id,
+            "--yes",
+        ],
+    )
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+
+    assert exit_code == 0
+    assert "Event deleted" in output

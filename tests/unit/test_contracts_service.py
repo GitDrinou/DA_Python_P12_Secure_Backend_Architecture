@@ -407,3 +407,39 @@ def test_list_unsigned_or_unpaid_contracts_returns_expected_rows(db_session):
     assert unsigned.contract_id in contract_ids
     assert unpaid.contract_id in contract_ids
     assert paid_and_signed.contract_id not in contract_ids
+
+
+def test_delete_contract(db_session):
+    seed_rbac(db_session)
+    manager = create_employee(
+        db_session,
+        ROLE_MANAGEMENT,
+        full_name="Manager",
+        email="manager@test.com",
+    )
+    sales = create_employee(
+        db_session,
+        ROLE_SALES,
+        full_name="Sales",
+        email="sales@test.com",
+    )
+    customer = create_customer(
+        db_session,
+        sales,
+        full_name="Customer",
+        email="customer@test.coom",
+    )
+    contract = create_contract(
+        db_session,
+        customer,
+        total_amount=1000.0,
+        remaining_amount=1000.0,
+        is_signed=False
+    )
+    service = ContractService(db_session)
+    result = service.delete_contract(
+        current_employee=manager,
+        contract_id=contract.contract_id,
+    )
+
+    assert result is True

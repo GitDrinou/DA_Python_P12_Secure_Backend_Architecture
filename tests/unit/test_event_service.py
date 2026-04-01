@@ -2,6 +2,7 @@ import pytest
 from datetime import datetime, timezone, timedelta
 from security.permissions import ROLE_SALES, ROLE_SUPPORT, ROLE_MANAGEMENT
 from security.rbac import seed_rbac
+from services.employee_service import EmployeeService
 from services.event_service import EventService
 from tests.factories import (
     create_employee,
@@ -502,3 +503,64 @@ def test_list_my_events_allows_support(db_session):
     event_ids = {event.event_id for event in events}
 
     assert my_event.event_id in event_ids
+
+
+def test_delete_event(db_session, event):
+    seed_rbac(db_session)
+    service = EventService(db_session)
+
+    employee = (EmployeeService(db_session)
+                .get_employee(employee_id=event.contract.customer.sales_id))
+
+    result = service.delete_event(employee, event.event_id)
+
+    assert result is True
+
+
+def test_delete_event_rejects_non_owner(db_session):
+    seed_rbac(db_session)
+
+    owner = create_employee(
+        db_session,
+        "commercial",
+        full_name="Owner Delete",
+        email="owner-delete@test.com",
+        password="Password123!",
+    )
+    other_sales = create_employee(
+        db_session,
+        "commercial",
+        full_name="Other Delete",
+        email="other-delete@test.com",
+        password="Password123!",
+    )
+    customer = create_customer(
+        db_session,
+        owner,
+        full_name="Protected Delete",
+        email="protected-delete@test.com",
+    )
+    contract = create_contract(
+        db_session,
+        customer,
+        total_amount=1700.0,
+        remaining_amount=0.0,
+        is_signed=True
+    )
+    event = create_event(
+        db_session,
+        contract,
+        support_employee=None,
+        title="My Event"
+    )
+
+    service = EventService(db_session)
+
+    with pytest.raises(
+            ValueError,
+            match="You are not allowed to delete event"
+    ):
+        service.delete_event(
+            current_employee=other_sales,
+            event_id=event.event_id,
+        )

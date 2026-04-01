@@ -6,6 +6,7 @@ from security import (
     can_update_event,
     has_permission,
 )
+from security.authorization import can_delete_event
 from security.permissions import (
     PERM_EVENTS_ASSIGN_SUPPORT,
     ROLE_SUPPORT, PERM_EVENTS_FILTER_WITHOUT_SUPPORT,
@@ -260,6 +261,23 @@ class EventService:
         self.db_session.refresh(event)
 
         return event
+
+    def delete_event(self, current_employee, event_id):
+        """
+        Delete event by event id
+        Args:
+            current_employee (object)
+            event_id (str): event id
+        """
+        event = self.get_event(event_id)
+
+        if not can_delete_event(current_employee, event):
+            raise ValueError("You are not allowed to delete event")
+
+        self.db_session.delete(event)
+        self.db_session.commit()
+
+        return True
 
     @staticmethod
     def _format_datetime(value):

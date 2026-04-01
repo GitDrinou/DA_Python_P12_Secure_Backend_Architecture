@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime, timezone, timedelta
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 import database.models  # noqa: F401
@@ -153,6 +154,25 @@ def contract(db_session, customer):
     db_session.commit()
     db_session.refresh(contract)
     return contract
+
+
+@pytest.fixture(scope="function")
+def event(db_session, contract):
+    from database.models import Event
+
+    event = Event(
+        title="Event Test",
+        start_date=datetime.now(timezone.utc) + timedelta(days=7),
+        end_date=datetime.now(timezone.utc) + timedelta(days=7, hours=4),
+        location="Test Location",
+        notes="Event Notes",
+        contract_id=contract.contract_id,
+        attendees=10,
+    )
+    db_session.add(event)
+    db_session.commit()
+    db_session.refresh(event)
+    return event
 
 
 @pytest.fixture(autouse=True)

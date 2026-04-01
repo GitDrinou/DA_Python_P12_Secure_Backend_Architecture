@@ -7,7 +7,7 @@ from security.permissions import (
     PERM_CONTRACTS_UPDATE_ALL,
     PERM_EVENTS_CREATE_FOR_SIGNED_CONTRACT_OWNED_CUSTOMERS,
     PERM_EVENTS_ASSIGN_SUPPORT, PERM_EVENTS_UPDATE_ASSIGNED,
-    PERM_CONTRACTS_UPDATE_OWNED_CUSTOMERS
+    PERM_CONTRACTS_UPDATE_OWNED_CUSTOMERS, PERM_EVENTS_DELETE_OWNED_CUSTOMERS
 )
 
 
@@ -97,4 +97,11 @@ def can_update_event(employee, event):
     return (
         has_permission(employee, PERM_EVENTS_UPDATE_ASSIGNED)
         and event.support_id == employee.employee_id
+    )
+
+
+def can_delete_event(employee, event):
+    return (
+        has_permission(employee, PERM_EVENTS_DELETE_OWNED_CUSTOMERS)
+        and event.contract.customer.sales_id == employee.employee_id
     )

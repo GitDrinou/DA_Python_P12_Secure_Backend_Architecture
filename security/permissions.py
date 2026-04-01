@@ -21,6 +21,7 @@ PERM_CONTRACTS_READ_ALL = "contracts.read_all"
 PERM_CONTRACTS_CREATE_ALL = "contracts.create_all"
 PERM_CONTRACTS_UPDATE_ALL = "contracts.update_all"
 PERM_CONTRACTS_UPDATE_OWNED_CUSTOMERS = "contracts.update_owned_customers"
+PERM_CONTRACTS_DELETE_ALL = "contracts.delete_all"
 PERM_CONTRACTS_FILTER_UNSIGNED_OR_UNPAID = \
     "contracts.filter_unsigned_or_unpaid"
 
@@ -30,6 +31,9 @@ PERM_EVENTS_FILTER_WITHOUT_SUPPORT = "events.filter_without_support"
 PERM_EVENTS_ASSIGN_SUPPORT = "events.assign_support"
 PERM_EVENTS_CREATE_FOR_SIGNED_CONTRACT_OWNED_CUSTOMERS = \
     "events.create_for_signed_contract_owned_customers"
+PERM_EVENTS_UPDATE_FOR_SIGNED_CONTRACT_OWNED_CUSTOMERS = \
+    "events.update_for_signed_contract_owned_customers"
+PERM_EVENTS_DELETE_OWNED_CUSTOMERS = "events.delete_owned_customers"
 PERM_EVENTS_FILTER_ASSIGNED_TO_ME = "events.filter_assigned_to_me"
 PERM_EVENTS_UPDATE_ASSIGNED = "events.update_assigned"
 
@@ -69,6 +73,7 @@ MANAGEMENT_PERMISSIONS = {
     PERM_EMPLOYEES_DELETE: "Supprimer un collaborateur",
     PERM_CONTRACTS_CREATE_ALL: "Créer tous les contrats",
     PERM_CONTRACTS_UPDATE_ALL: "Modifier tous les contrats",
+    PERM_CONTRACTS_DELETE_ALL: "Supprimer tous les contrats",
     PERM_EVENTS_FILTER_WITHOUT_SUPPORT: (
         "Filtrer les événements sans contact support"
     ),
@@ -90,6 +95,9 @@ SALES_PERMISSIONS = {
     PERM_EVENTS_CREATE_FOR_SIGNED_CONTRACT_OWNED_CUSTOMERS: (
         "Créer un événement pour un contrat signé par un client du commercial"
     ),
+    PERM_EVENTS_DELETE_OWNED_CUSTOMERS: (
+        "Supprimer un événement d'un client du commercial"
+    )
 }
 
 SUPPORT_PERMISSIONS = {

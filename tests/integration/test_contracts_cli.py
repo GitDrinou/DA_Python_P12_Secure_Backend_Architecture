@@ -307,3 +307,93 @@ def test_contracts_list_unsigned_or_unpaid_as_sales(
 
     assert exit_code == 0
     assert "Unsigned or unpaid contracts" in output
+
+
+def test_contracts_delete_as_manager(
+        monkeypatch,
+        db_session,
+        tmp_path,
+        capsys
+):
+    import contracts
+
+    login_as_manager(monkeypatch, db_session, tmp_path)
+
+    sales = create_employee(
+        db_session=db_session,
+        role_name="commercial",
+        full_name="Sales Owner",
+        email="sales.support.contract@test.com",
+        password="Password123!",
+    )
+    customer = create_customer(
+        db_session=db_session,
+        sales_employee=sales,
+        email="customer.contract@test.com",
+    )
+    contract = create_contract(
+        db_session=db_session,
+        customer=customer,
+        total_amount="500.00",
+        remaining_amount="500.00",
+        is_signed=False,
+    )
+
+    exit_code = contracts.main(
+        db_session=db_session,
+        args=[
+            "delete",
+            "--contract-id", contract.contract_id,
+            "--yes",
+        ],
+    )
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+
+    assert exit_code == 0
+    assert "Contract deleted" in output
+
+
+def test_contracts_delete_as_support_forbidden(
+        monkeypatch,
+        db_session,
+        tmp_path,
+        capsys
+):
+    import contracts
+
+    login_as_support(monkeypatch, db_session, tmp_path)
+
+    sales = create_employee(
+        db_session=db_session,
+        role_name="commercial",
+        full_name="Sales Owner",
+        email="sales.support.contract@test.com",
+        password="Password123!",
+    )
+    customer = create_customer(
+        db_session=db_session,
+        sales_employee=sales,
+        email="customer.contract@test.com",
+    )
+    contract = create_contract(
+        db_session=db_session,
+        customer=customer,
+        total_amount="500.00",
+        remaining_amount="500.00",
+        is_signed=False,
+    )
+
+    exit_code = contracts.main(
+        db_session=db_session,
+        args=[
+            "delete",
+            "--contract-id", contract.contract_id,
+            "--yes",
+        ],
+    )
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+
+    assert exit_code != 0
+    assert "contracts.delete" in output
