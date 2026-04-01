@@ -296,7 +296,7 @@ class EventService:
 
     @staticmethod
     def _validate_event_dates_and_attendees(start_date, end_date, attendees):
-        if end_date <= start_date:
+        if end_date < start_date:
             raise ValueError("End date must be after start date")
 
         if attendees < 0:
