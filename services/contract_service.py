@@ -1,6 +1,7 @@
 from sqlalchemy.orm import joinedload
 from decimal import Decimal
 from database.models import Contract, Customer
+from observability import log_contract_signed
 from security import has_permission, can_update_contract
 from security.permissions import PERM_CONTRACTS_CREATE_ALL, \
     PERM_CONTRACTS_FILTER_UNSIGNED_OR_UNPAID, PERM_CONTRACTS_DELETE_ALL
@@ -160,12 +161,18 @@ class ContractService:
             contract.total_amount = new_total_amount
         if remaining_amount is not None:
             contract.remaining_amount = new_remaining_amount
+
+        was_signed = contract.is_signed
+
         if is_signed is not None:
             contract.is_signed = is_signed
 
         self.db_session.add(contract)
         self.db_session.commit()
         self.db_session.refresh(contract)
+
+        if (not was_signed) and contract.is_signed:
+            log_contract_signed(current_employee, contract)
 
         return contract
 

@@ -2,7 +2,12 @@ import click
 from cli.context import get_current_employee, CliAuthenticationError
 from cli.printers import print_forbidden, print_error
 from database.session import SessionLocal
+from observability import get_application_logger, init_observability, \
+    flush_observability
 from security import has_permission, AuthorizationError
+
+
+logger = get_application_logger()
 
 
 def get_db_session(ctx):
@@ -31,6 +36,8 @@ def run_click_app(app, db_session=None, args=None, prog_name=None):
         db_session = SessionLocal()
         created_session = True
 
+    init_observability()
+
     try:
         app.main(
             args=args,
@@ -52,8 +59,10 @@ def run_click_app(app, db_session=None, args=None, prog_name=None):
         print_error(str(exception))
         return 1
     except Exception as exception:
+        logger.exception("Unhandled exception in CLI command")
         print_error(f"Unexpected error: {exception}")
         return 1
     finally:
+        flush_observability(timeout=2.0)
         if created_session:
             db_session.close()

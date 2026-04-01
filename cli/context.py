@@ -1,6 +1,11 @@
 from database.session import SessionLocal
+from observability import get_application_logger
 from security import AuthorizationError, get_authenticated_employee
+from security.jwt_handler import TokenError, TokenExpiredError
 from security.session_store import load_session
+
+
+logger = get_application_logger()
 
 
 class CliAuthenticationError(Exception):
@@ -35,9 +40,31 @@ def get_current_employee(db_session=None):
     try:
         employee = get_authenticated_employee(db_session, access_token)
         return employee
-    except AuthorizationError as exception:
+    except TokenExpiredError as exception:
+        logger.warning(
+            "Authentication failed: expired access token",
+            extra={
+                "event_kind": "auth",
+                "event_category": "authentication",
+                "event_action": "token_expired",
+                "auth_reason": "token_expired",
+            },
+        )
         raise CliAuthenticationError(
-            f"Expired session or invalid session: {exception}"
+            "Session expired. Please login again."
+        ) from exception
+    except (AuthorizationError, TokenError) as exception:
+        logger.warning(
+            "Authentication failed: invalid session token",
+            extra={
+                "event_kind": "auth",
+                "event_category": "authentication",
+                "event_action": "token_invalid",
+                "auth_reason": "token_invalid",
+            },
+        )
+        raise CliAuthenticationError(
+            "Invalid session. Please login again."
         ) from exception
     finally:
         if created_session:

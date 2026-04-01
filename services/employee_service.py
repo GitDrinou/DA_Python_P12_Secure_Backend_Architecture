@@ -1,5 +1,6 @@
 from sqlalchemy.orm import joinedload
 from database.models import Employee, Role
+from observability import log_employee_created, log_employee_updated
 from security import has_permission
 from security.passwords import hash_password
 from security.permissions import (
@@ -92,6 +93,8 @@ class EmployeeService:
         self.db_session.commit()
         self.db_session.refresh(employee)
 
+        log_employee_created(current_employee, employee)
+
         return employee
 
     def update_employee(
@@ -158,6 +161,8 @@ class EmployeeService:
 
         self.db_session.commit()
         self.db_session.refresh(employee)
+
+        log_employee_updated(current_employee, employee)
 
         return employee
 
