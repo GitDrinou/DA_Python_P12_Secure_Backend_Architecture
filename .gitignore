@@ -1,4 +1,7 @@
-.env
-__init__
 .idea/
-__pycache__
+__pycache__/
+.pytest_cache/
+__MACOSX/
+.env
+.env.test
+__init__

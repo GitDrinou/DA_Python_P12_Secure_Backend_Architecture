@@ -93,10 +93,10 @@ def get_settings(env_file=".env"):
             algorithm=os.getenv("JWT_ALGORITHM", "HS256"),
             issuer=os.getenv("JWT_ISSUER", "epic-events-crm"),
             access_token_expire_minutes=int(
-                os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "15")
+                os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15")
             ),
             refresh_token_expire_days=int(
-                os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS", "7")
+                os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7")
             ),
         ),
         admin=AdminSettings(

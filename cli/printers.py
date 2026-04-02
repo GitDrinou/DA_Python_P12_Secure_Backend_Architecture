@@ -1,7 +1,6 @@
 from cli.console import console, error_console
 from rich.panel import Panel
 from rich.table import Table
-from rich.text import Text
 
 
 def _to_text(value):
@@ -16,10 +15,6 @@ def print_success(message):
 
 def print_info(message):
     console.print(Panel.fit(message, title="INFO", border_style="cyan"))
-
-
-def print_warning(message):
-    console.print(Panel.fit(message, title="WARNIND", border_style="yellow"))
 
 
 def print_error(message):
@@ -70,8 +65,3 @@ def print_kv_panel(title, data):
         data.items()
     )
     console.print(Panel(body, title=title, border_style="blue"))
-
-
-def print_auth_message(message):
-    text = Text(message)
-    console.print(Panel.fit(text, title="AUTH", border_style="green"))

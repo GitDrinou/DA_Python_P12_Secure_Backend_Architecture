@@ -58,8 +58,8 @@ def test_get_settings_builds_typed_settings_from_env_file(tmp_path):
     assert settings.jwt.secret_key == "super-secret"
     assert settings.jwt.algorithm == "HS512"
     assert settings.jwt.issuer == "crm-tests"
-    assert settings.jwt.access_token_expire_minutes == 15
-    assert settings.jwt.refresh_token_expire_days == 7
+    assert settings.jwt.access_token_expire_minutes == 30
+    assert settings.jwt.refresh_token_expire_days == 14
     assert settings.admin.email == "admin@example.com"
     assert settings.admin.password == "change-me"
     assert settings.session.directory == session_dir

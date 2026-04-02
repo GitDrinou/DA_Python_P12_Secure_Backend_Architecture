@@ -109,7 +109,7 @@ class CustomerService:
                 self.db_session.query(Customer)
                 .filter(
                     Customer.email == email,
-                    Customer.customer_id == customer_id,
+                    Customer.customer_id != customer_id,
                 )
                 .first()
             )

@@ -18,7 +18,7 @@ class EventService:
     def __init__(self, db_session):
         self.db_session = db_session
 
-    def list_events(self, without_support=False, assigned_to_employee_id=None):
+    def list_events(self):
         """ List events """
         return (
             self.db_session.query(Event)

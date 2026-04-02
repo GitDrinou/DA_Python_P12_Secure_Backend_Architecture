@@ -80,7 +80,7 @@ def refresh_access_token(refresh_token, employee):
     if payload.get("type") != "refresh":
         raise TokenError("Given token is not a refresh token")
 
-    if payload.get("sub") != employee.employee_id:
+    if payload.get("sub") != str(employee.employee_id):
         raise TokenError("Refresh token does not belong to this employee")
 
     return create_access_token(employee)
