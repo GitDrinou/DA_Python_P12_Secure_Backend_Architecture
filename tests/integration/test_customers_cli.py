@@ -1,3 +1,4 @@
+from cli.commands import customers
 from tests.helpers.auth import login_as_sales
 
 
@@ -8,7 +9,6 @@ def test_customers_list_requires_login(
         capsys
 ):
     from security import session_store
-    from cli.commands import customers
 
     monkeypatch.setattr(session_store, "SESSION_DIR", tmp_path)
     monkeypatch.setattr(
@@ -34,7 +34,6 @@ def test_customers_create_as_sales(
         tmp_path,
         capsys
 ):
-    from cli.commands import customers
 
     login_as_sales(monkeypatch, db_session, tmp_path)
 
@@ -56,7 +55,6 @@ def test_customers_create_as_sales(
 
 
 def test_customers_update_as_sales(monkeypatch, db_session, tmp_path, capsys):
-    from cli.commands import customers
     from tests.factories import create_customer
 
     sales = login_as_sales(monkeypatch, db_session, tmp_path)
@@ -86,7 +84,6 @@ def test_customers_update_as_sales(monkeypatch, db_session, tmp_path, capsys):
 
 
 def test_customers_delete_as_sales(monkeypatch, db_session, tmp_path, capsys):
-    from cli.commands import customers
     from tests.factories import create_customer
 
     sales = login_as_sales(monkeypatch, db_session, tmp_path)

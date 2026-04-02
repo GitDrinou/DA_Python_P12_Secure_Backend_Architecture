@@ -1,3 +1,4 @@
+from cli.commands import employees
 from tests.factories import create_employee
 from tests.helpers.auth import (
     login_as_manager, login_as_sales, login_as_support
@@ -11,7 +12,6 @@ def test_employees_list_requires_login(
         capsys
 ):
     from security import session_store
-    from cli.commands import employees
 
     monkeypatch.setattr(session_store, "SESSION_DIR", tmp_path)
     monkeypatch.setattr(
@@ -75,7 +75,6 @@ def test_employees_list_as_sales_forbidden(
         tmp_path,
         capsys
 ):
-    from cli.commands import employees
 
     login_as_sales(monkeypatch, db_session, tmp_path)
 
@@ -91,7 +90,6 @@ def test_employees_list_as_sales_forbidden(
 
 
 def test_employees_get_as_manager(monkeypatch, db_session, tmp_path, capsys):
-    from cli.commands import employees
 
     login_as_manager(monkeypatch, db_session, tmp_path)
 
@@ -122,7 +120,6 @@ def test_employees_create_as_manager(
         tmp_path,
         capsys
 ):
-    from cli.commands import employees
 
     login_as_manager(monkeypatch, db_session, tmp_path)
 
@@ -150,7 +147,6 @@ def test_employees_create_as_sales_forbidden(
         tmp_path,
         capsys
 ):
-    from cli.commands import employees
 
     login_as_sales(monkeypatch, db_session, tmp_path)
 
@@ -177,7 +173,6 @@ def test_employees_create_rejects_duplicate_email(
         tmp_path,
         capsys
 ):
-    from cli.commands import employees
 
     login_as_manager(monkeypatch, db_session, tmp_path)
 
@@ -212,7 +207,6 @@ def test_employees_update_as_manager(
         tmp_path,
         capsys
 ):
-    from cli.commands import employees
 
     login_as_manager(monkeypatch, db_session, tmp_path)
 
@@ -250,7 +244,6 @@ def test_employees_update_as_sales_forbidden(
         tmp_path,
         capsys
 ):
-    from cli.commands import employees
 
     login_as_sales(monkeypatch, db_session, tmp_path)
 
@@ -287,7 +280,6 @@ def test_employees_update_rejects_duplicate_email(
         tmp_path,
         capsys
 ):
-    from cli.commands import employees
 
     login_as_manager(monkeypatch, db_session, tmp_path)
 
@@ -331,7 +323,6 @@ def test_employees_delete_as_manager(
         tmp_path,
         capsys
 ):
-    from cli.commands import employees
 
     login_as_manager(monkeypatch, db_session, tmp_path)
 
@@ -364,7 +355,6 @@ def test_employees_delete_as_support_forbidden(
         tmp_path,
         capsys
 ):
-    from cli.commands import employees
 
     login_as_support(monkeypatch, db_session, tmp_path)
 
