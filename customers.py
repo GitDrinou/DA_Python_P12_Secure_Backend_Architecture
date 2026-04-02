@@ -1,6 +1,6 @@
 import click
 from cli.printers import print_collection, print_row, print_success
-from cli.verificators import run_click_app, require_permission
+from cli.validators import run_click_app, require_permission
 from security.permissions import (
     PERM_CUSTOMERS_READ_ALL, PERM_CUSTOMERS_CREATE_OWNED,
     PERM_CUSTOMERS_UPDATE_OWNED, PERM_CUSTOMERS_DELETE_OWNED,

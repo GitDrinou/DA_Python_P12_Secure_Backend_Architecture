@@ -27,7 +27,7 @@ class EmployeeService:
         """
         Get employee by employee id
         Args:
-            employee_id (str): employee ident
+            employee_id (str): employee identifier
         """
         employee = (
             self.db_session.query(Employee)
@@ -111,7 +111,7 @@ class EmployeeService:
         Update employee by employee id
         Args:
             current_employee (Employee): current employee object
-            employee_id (str): employee ident
+            employee_id (str): employee identifier
             full_name (str): employee full name (default None)
             email (str): employee email (default None)
             password (str): employee password (default None)
@@ -171,7 +171,7 @@ class EmployeeService:
         Delete employee by employee id
         Args:
             current_employee (Employee): current employee object
-            employee_id (str): employee ident
+            employee_id (str): employee identifier
         """
         if not has_permission(current_employee, PERM_EMPLOYEES_DELETE):
             raise ValueError("You are not allowed to delete employee")

@@ -22,7 +22,7 @@ class ContractService:
 
     def list_unsigned_or_unpaid_contracts(self, current_employee):
         """
-        List all un-signed contracts
+        List all unsigned contracts
         Args:
             current_employee (Employee): current employee object
         """
@@ -181,7 +181,7 @@ class ContractService:
         Delete contract by contract id
         Args:
             current_employee (Employee): current employee object
-            contract_id (str): contract ident
+            contract_id (str): contract identifier
         """
         if not has_permission(current_employee, PERM_CONTRACTS_DELETE_ALL):
             raise ValueError("You are not allowed to delete contract")

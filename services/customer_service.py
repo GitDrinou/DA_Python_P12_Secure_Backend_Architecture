@@ -20,7 +20,7 @@ class CustomerService:
         """
         Get customer by customer id
         Args:
-            customer_id (str): customer ident
+            customer_id (str): customer identifier
         """
         customer = (
             self.db_session.query(Customer)

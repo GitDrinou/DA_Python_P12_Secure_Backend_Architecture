@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import click
 from cli.printers import print_collection, print_row, print_success
-from cli.verificators import run_click_app, require_login, require_permission
+from cli.validators import run_click_app, require_login, require_permission
 from security.permissions import (
     PERM_EVENTS_READ_ALL, PERM_EVENTS_FILTER_WITHOUT_SUPPORT,
     PERM_EVENTS_FILTER_ASSIGNED_TO_ME,

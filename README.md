@@ -19,7 +19,7 @@ The project follows a Service-based layered architecture:
 2. Business Logic Layer
 3. Data Access Layer
 4. Database
-### architecture Components
+### Architecture Components
 - CLI > Handles user input and commands
 - Services > contains business logic
 - Permissions > role-based access control
@@ -78,6 +78,7 @@ Support users manage events assigned to them.
 
 ## Configuration
 Create a `.env`file.
+
 Example:
 ```
 MYSQL_USER=your_db_user
@@ -101,13 +102,13 @@ CRM_ADMIN_USER_PASSWORD=securepassword
 
 ## Usage / CRM Commands
 ### Commands help
-For each ressource you can access to the help documentation.
+For each resource you can access to the help documentation.
 
 Example: ```python epic_events.py --help```
 will display the commands definitions for the `epic_events.py` 
-authentication ressource.
+authentication resource.
 
-### Authentification
+### Authentication
 - Login `python epic_events.py login --email EMAIL --password PASSWORD`
 - Logout `python epic_events.py logout`
 - Current user `python epic_events.py whoami`
@@ -123,7 +124,7 @@ python employees.py create
     --password PASSWORD 
     --role ROLE
 ```
-Optional for activate or not `--inactive`
+Optional flag: `--inactive` to create the employee as inactive.
 - Update employee  
 ```
 python employees.py update 
@@ -172,7 +173,7 @@ python contracts.py create
 ```
 - Update contract  
 ```
-python customers.py update 
+python contracts.py update 
     --contract-id ID
     --total-amount "1000" 
     --remaining-amount "500" 
@@ -195,7 +196,7 @@ python events.py create
     --attendees 50 
     --notes "NOTES"
 ```
-- Update contract  
+- Update event  
 ```
 python events.py update 
     --event-id ID 
@@ -221,7 +222,7 @@ The application implements multiple security layers:
 - Secure login/logout
 ### Authorization
 - Role-based access control
-- Principe of least privilege
+- Principle of least privilege
 - Permission decorators
 ### Database Security
 - SQLAlchemy ORM
@@ -236,7 +237,7 @@ The application implements multiple security layers:
 - SQLAlchemy
 - MySQL
 - JWT
-- Argon 2
+- Argon2
 - Click & Rich
 - Sentry
 

@@ -38,7 +38,7 @@ class EventService:
         """
         if not has_permission(current_employee,
                               PERM_EVENTS_FILTER_WITHOUT_SUPPORT):
-            raise ValueError("You ar not allowed to list events withour "
+            raise ValueError("You ar not allowed to list events without "
                              "support")
 
         return (

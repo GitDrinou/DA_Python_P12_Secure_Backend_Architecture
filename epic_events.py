@@ -3,7 +3,7 @@ from cli.printers import print_success, print_kv_panel
 from security import AuthenticationError
 from security.auth_service import login
 from security.session_store import save_session, clear_session
-from cli.verificators import require_login, run_click_app
+from cli.validators import require_login, run_click_app
 
 
 @click.group(help="Main CLI for EPIC Events CRM")

@@ -102,7 +102,7 @@ SALES_PERMISSIONS = {
 
 SUPPORT_PERMISSIONS = {
     PERM_EVENTS_FILTER_ASSIGNED_TO_ME: (
-        "Filtrer les événements attribué au support connecté"
+        "Filtrer les événements attribués au support connecté"
     ),
     PERM_EVENTS_UPDATE_ASSIGNED: (
         "Modifier les événements attribués au support connecté"
