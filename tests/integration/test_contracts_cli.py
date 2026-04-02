@@ -11,7 +11,7 @@ def test_contracts_list_requires_login(
         capsys
 ):
     from security import session_store
-    import contracts
+    from cli.commands import contracts
 
     monkeypatch.setattr(session_store, "SESSION_DIR", tmp_path)
     monkeypatch.setattr(
@@ -36,7 +36,7 @@ def test_contracts_create_as_manager(
         tmp_path,
         capsys
 ):
-    import contracts
+    from cli.commands import contracts
 
     login_as_manager(monkeypatch, db_session, tmp_path)
 
@@ -75,7 +75,7 @@ def test_contracts_create_as_sales_unauthorized(
     tmp_path,
     capsys,
 ):
-    import contracts
+    from cli.commands import contracts
 
     sales = login_as_sales(monkeypatch, db_session, tmp_path)
     customer = create_customer(
@@ -106,7 +106,7 @@ def test_contracts_update_as_manager(
         tmp_path,
         capsys
 ):
-    import contracts
+    from cli.commands import contracts
 
     login_as_manager(monkeypatch, db_session, tmp_path)
 
@@ -151,7 +151,7 @@ def test_contracts_update_as_sales_on_owned_customer(
     tmp_path,
     capsys,
 ):
-    import contracts
+    from cli.commands import contracts
 
     sales = login_as_sales(monkeypatch, db_session, tmp_path)
 
@@ -189,7 +189,7 @@ def test_contracts_update_as_sales_on_other_sales_customer_unauthorized(
     tmp_path,
     capsys,
 ):
-    import contracts
+    from cli.commands import contracts
 
     login_as_sales(monkeypatch, db_session, tmp_path)
 
@@ -235,7 +235,7 @@ def test_contracts_update_as_support_unauthorized(
     tmp_path,
     capsys,
 ):
-    import contracts
+    from cli.commands import contracts
 
     login_as_support(monkeypatch, db_session, tmp_path)
 
@@ -281,7 +281,7 @@ def test_contracts_list_unsigned_or_unpaid_as_sales(
     tmp_path,
     capsys,
 ):
-    import contracts
+    from cli.commands import contracts
 
     sales = login_as_sales(monkeypatch, db_session, tmp_path)
 
@@ -315,7 +315,7 @@ def test_contracts_delete_as_manager(
         tmp_path,
         capsys
 ):
-    import contracts
+    from cli.commands import contracts
 
     login_as_manager(monkeypatch, db_session, tmp_path)
 
@@ -360,7 +360,7 @@ def test_contracts_delete_as_support_forbidden(
         tmp_path,
         capsys
 ):
-    import contracts
+    from cli.commands import contracts
 
     login_as_support(monkeypatch, db_session, tmp_path)
 
