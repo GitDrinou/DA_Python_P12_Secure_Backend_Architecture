@@ -5,3 +5,6 @@ __MACOSX/
 .env
 .env.test
 __init__
+.coverage
+htmlcov/
+coverage.xml

@@ -241,6 +241,17 @@ The application implements multiple security layers:
 - Click & Rich
 - Sentry
 
-## Tests
-- Launch and display all tests in each tests file ```pytest```
-- Launch and display only tests fils ```pytest -q```
+## Running Test
+This project uses **pytest** with coverage reporting.
+
+Run the full test and generates coverage reports: `pytest`
+
+### Pytest options
+The project uses the following pytest options:
+- `-v`: verbose mode
+- `--cov`: enable coverage measurement
+- `--cov-report=term-missing`: coverage report in terminal with missing lines
+- `--cov-report=html`: generate HTML coverage report
+- `--cov-report=wml`: generate XML coverage report
+
+Example: `pytest -v --cov --cov-report=term-missing --cov-report=html --cov-report=xml`

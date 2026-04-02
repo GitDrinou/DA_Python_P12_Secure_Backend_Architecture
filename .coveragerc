@@ -1,0 +1,40 @@
+[run]
+branch = True
+source =
+    cli
+    core
+    database
+    observability
+    security
+    services
+    epic_events
+
+omit =
+    tests/*
+    create_db.py
+    */__pycache__/*
+    .venv/*
+    venv/*
+    */site-packages/*
+    */migrations/*
+    .pytest_cache/*
+    .coverage
+    htmlcov/*
+
+[report]
+show_missing = True
+skip_covered = False
+precision = 2
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    raise SystemExit
+    pass
+    \.\.\.
+    if TYPE_CHECKING:
+
+[html]
+directory = htmlcov
+
+[xml]
+output = coverage.xml
