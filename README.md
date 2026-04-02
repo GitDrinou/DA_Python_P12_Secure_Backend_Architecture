@@ -104,6 +104,13 @@ Support users manage events assigned to them.
 - Cannot assign themselves
 
 ## Usage / CRM Commands
+### Commands help
+For each ressource you can access to the help documentation.
+
+Example: ```python epic_events.py --help```
+will display the commands definitions for the `epic_events.py` 
+authentication ressource.
+
 ### Authentification
 - Login `python epic_events.py login --email EMAIL --password PASSWORD`
 - Logout `python epic_events.py logout`
