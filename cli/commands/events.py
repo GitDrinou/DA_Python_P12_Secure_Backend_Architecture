@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import click
 from cli.printers import print_collection, print_row, print_success
-from cli.validators import run_click_app, require_login, require_permission
+from cli.validators import run_click_app, require_permission, require_login
 from security.permissions import (
     PERM_EVENTS_READ_ALL, PERM_EVENTS_FILTER_WITHOUT_SUPPORT,
     PERM_EVENTS_FILTER_ASSIGNED_TO_ME,
@@ -9,6 +9,7 @@ from security.permissions import (
     PERM_EVENTS_ASSIGN_SUPPORT, PERM_EVENTS_DELETE_OWNED_CUSTOMERS
 )
 from services.event_service import EventService
+from cli.interactions import prompt_if_missing, confirm_if_requested
 
 
 def parse_datetime(value):
@@ -90,22 +91,25 @@ def list_events(ctx, without_support, assigned_to_me):
 
 
 @cli.command("get", help="Display an event.")
-@click.option("--event-id", prompt=True, required=True)
+@click.option("--event-id", required=True)
 @click.pass_context
 def get_event(ctx, event_id):
     require_permission(ctx, PERM_EVENTS_READ_ALL)
+
+    event_id = prompt_if_missing(event_id, "Event id")
+
     service = EventService(ctx.obj["db_session"])
     event = service.get_event(event_id)
     print_row(event_to_dict(event), title="Event")
 
 
 @cli.command("create", help="Create an event.")
-@click.option("--contract-id", prompt=True, required=True)
-@click.option("--title", prompt=True, required=True)
-@click.option("--start-date", prompt=True, required=True)
-@click.option("--end-date", prompt=True, required=True)
-@click.option("--location", prompt=True, required=True)
-@click.option("--attendees", prompt=True, required=True, type=int)
+@click.option("--contract-id", required=False)
+@click.option("--title", required=False)
+@click.option("--start-date", required=False)
+@click.option("--end-date", required=False)
+@click.option("--location", required=False)
+@click.option("--attendees", required=False, type=int)
 @click.option("--notes", required=False)
 @click.pass_context
 def create_event(
@@ -122,6 +126,14 @@ def create_event(
         ctx,
         PERM_EVENTS_CREATE_FOR_SIGNED_CONTRACT_OWNED_CUSTOMERS,
     )
+
+    contract_id = prompt_if_missing(contract_id, "Contract id")
+    title = prompt_if_missing(title, "Title")
+    start_date = prompt_if_missing(start_date, "Start date")
+    end_date = prompt_if_missing(end_date, "End date")
+    location = prompt_if_missing(location, "Location")
+    attendees = prompt_if_missing(attendees, "Attendees", type=int)
+
     service = EventService(ctx.obj["db_session"])
     event = service.create_event(
         current_employee=current_employee,
@@ -137,7 +149,7 @@ def create_event(
 
 
 @cli.command("update", help="Update an event.")
-@click.option("--event-id", prompt=True, required=True)
+@click.option("--event-id", required=False)
 @click.option("--title", required=False)
 @click.option("--start-date", required=False)
 @click.option("--end-date", required=False)
@@ -156,36 +168,48 @@ def update_event(
         notes
 ):
     current_employee = require_login(ctx)
+
+    event_id = prompt_if_missing(event_id, "Event id")
+
     service = EventService(ctx.obj["db_session"])
     current = service.get_event(event_id)
 
-    if title is None:
-        title = click.prompt("Title", default=current.title, show_default=True)
-    if start_date is None:
-        start_date = click.prompt(
-            "Start date",
-            default=current.start_date.isoformat(),
-            show_default=True,
-        )
-    if end_date is None:
-        end_date = click.prompt(
-            "End date",
-            default=current.end_date.isoformat(),
-            show_default=True,
-        )
-    if location is None:
-        location = click.prompt(
-            "Location",
-            default=current.location,
-            show_default=True,
-        )
-    if attendees is None:
-        attendees = click.prompt(
-            "Attendees",
-            default=current.attendees,
-            type=int,
-            show_default=True,
-        )
+    title = prompt_if_missing(
+        title,
+        "Title",
+        default=current.title,
+        show_default=True,
+    )
+
+    start_date = prompt_if_missing(
+        start_date,
+        "Start date",
+        default=current.start_date.isoformat(),
+        show_default=True,
+    )
+
+    end_date = prompt_if_missing(
+        end_date,
+        "End date",
+        default=current.end_date.isoformat(),
+        show_default=True,
+    )
+
+    location = prompt_if_missing(
+        location,
+        "Location",
+        default=current.location,
+        show_default=True,
+    )
+
+    attendees = prompt_if_missing(
+        attendees,
+        "Attendees",
+        default=current.attendees,
+        type=int,
+        show_default=True,
+    )
+
     if notes is None:
         notes = click.prompt(
             "Notes",
@@ -207,11 +231,15 @@ def update_event(
 
 
 @cli.command("assign-support", help="Assign a support employee to an event.")
-@click.option("--event-id", prompt=True, required=True)
-@click.option("--support-id", prompt=True, required=True)
+@click.option("--event-id", required=False)
+@click.option("--support-id", prompt=True, required=False)
 @click.pass_context
 def assign_support(ctx, event_id, support_id):
     current_employee = require_permission(ctx, PERM_EVENTS_ASSIGN_SUPPORT)
+
+    event_id = prompt_if_missing(event_id, "Event id")
+    support_id = prompt_if_missing(support_id, "Support id")
+
     service = EventService(ctx.obj["db_session"])
     event = service.assign_support(
         event_id=event_id,
@@ -222,16 +250,22 @@ def assign_support(ctx, event_id, support_id):
 
 
 @cli.command("delete", help="Delete an event.")
-@click.option("--event-id", prompt=True, required=True)
-@click.confirmation_option(
-    prompt="Do you really want to delete this event ?"
+@click.option("--event-id", prompt=True, required=False)
+@click.option(
+    "--yes",
+    is_flag=True,
+    help="Confirm deletion without interactive prompt.",
 )
 @click.pass_context
-def delete_event(ctx, event_id):
+def delete_event(ctx, event_id, yes):
     current_employee = require_permission(
         ctx,
         PERM_EVENTS_DELETE_OWNED_CUSTOMERS
     )
+
+    event_id = prompt_if_missing(event_id, "Event id")
+    confirm_if_requested(yes, "Do you really want to delete this event ?")
+
     service = EventService(ctx.obj["db_session"])
     service.delete_event(
         current_employee=current_employee,

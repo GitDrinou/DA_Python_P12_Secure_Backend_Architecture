@@ -1,11 +1,12 @@
 import click
 from cli.printers import print_collection, print_row, print_success
-from cli.validators import run_click_app, require_login, require_permission
+from cli.validators import run_click_app, require_permission, require_login
 from security.permissions import (
     PERM_CONTRACTS_READ_ALL, PERM_CONTRACTS_FILTER_UNSIGNED_OR_UNPAID,
     PERM_CONTRACTS_CREATE_ALL, PERM_CONTRACTS_DELETE_ALL,
 )
 from services.contract_service import ContractService
+from cli.interactions import prompt_if_missing, confirm_if_requested
 
 
 def contract_to_dict(contract):
@@ -51,26 +52,27 @@ def list_contracts(ctx, unsigned_or_unpaid):
 
 
 @cli.command("get", help="Display a contract.")
-@click.option("--contract-id", prompt=True, required=True)
+@click.option("--contract-id", required=False)
 @click.pass_context
 def get_contract(ctx, contract_id):
     require_permission(ctx, PERM_CONTRACTS_READ_ALL)
+
+    contract_id = prompt_if_missing(contract_id, "Contract id")
+
     service = ContractService(ctx.obj["db_session"])
     contract = service.get_contract(contract_id)
     print_row(contract_to_dict(contract), title="Contract")
 
 
 @cli.command("create", help="Create a contract.")
-@click.option("--customer-id", prompt=True, required=True)
-@click.option("--total-amount", prompt=True, required=True, type=float)
-@click.option("--remaining-amount", prompt=True, required=True, type=float)
+@click.option("--customer-id", required=False)
+@click.option("--total-amount", required=False, type=float)
+@click.option("--remaining-amount", required=False, type=float)
 @click.option(
     "--is-signed",
     type=click.Choice(["true", "false"]),
-    prompt=True,
     required=False,
-    default="false",
-    show_default=True,
+    default=None,
 )
 @click.pass_context
 def create_contract(
@@ -81,6 +83,23 @@ def create_contract(
         is_signed
 ):
     current_employee = require_permission(ctx, PERM_CONTRACTS_CREATE_ALL)
+
+    customer_id = prompt_if_missing(customer_id, "Customer id")
+    total_amount = prompt_if_missing(total_amount, "Total amount", type=float)
+    remaining_amount = prompt_if_missing(
+        remaining_amount,
+        "Remaining amount",
+        type=float,
+    )
+
+    if is_signed is None:
+        is_signed = click.prompt(
+            "Is signed",
+            type=click.Choice(["true", "false"]),
+            default="false",
+            show_default=True,
+        )
+
     service = ContractService(ctx.obj["db_session"])
     contract = service.create_contract(
         current_employee=current_employee,
@@ -93,7 +112,7 @@ def create_contract(
 
 
 @cli.command("update", help="Update a contract.")
-@click.option("--contract-id", prompt=True, required=True)
+@click.option("--contract-id", required=True)
 @click.option("--total-amount", required=False, type=float)
 @click.option("--remaining-amount", required=False, type=float)
 @click.option(
@@ -110,24 +129,27 @@ def update_contract(
         is_signed
 ):
     current_employee = require_login(ctx)
+
+    contract_id = prompt_if_missing(contract_id, "Contract id")
+
     service = ContractService(ctx.obj["db_session"])
     current = service.get_contract(contract_id)
 
-    if total_amount is None:
-        total_amount = click.prompt(
-            "Total amount",
-            default=float(current.total_amount),
-            type=float,
-            show_default=True,
-        )
+    total_amount = prompt_if_missing(
+        total_amount,
+        "Total amount",
+        default=float(current.total_amount),
+        type=float,
+        show_default=True,
+    )
 
-    if remaining_amount is None:
-        remaining_amount = click.prompt(
-            "Remaining amount",
-            default=float(current.remaining_amount),
-            type=float,
-            show_default=True,
-        )
+    remaining_amount = prompt_if_missing(
+        remaining_amount,
+        "Remaining amount",
+        default=float(current.remaining_amount),
+        type=float,
+        show_default=True,
+    )
 
     if is_signed is None:
         is_signed = click.prompt(
@@ -148,13 +170,19 @@ def update_contract(
 
 
 @cli.command("delete", help="Delete a contract.")
-@click.option("--contract-id", prompt=True, required=True)
-@click.confirmation_option(
-    prompt="Do you really want to delete this contract ?"
+@click.option("--contract-id", required=False)
+@click.option(
+    "--yes",
+    is_flag=True,
+    help="Confirm deletion without interactive prompt.",
 )
 @click.pass_context
-def delete_contract(ctx, contract_id):
+def delete_contract(ctx, contract_id, yes):
     current_employee = require_permission(ctx, PERM_CONTRACTS_DELETE_ALL)
+
+    contract_id = prompt_if_missing(contract_id, "Contract id")
+    confirm_if_requested(yes, "Do you really want to delete this contract ?")
+
     service = ContractService(ctx.obj["db_session"])
     service.delete_contract(
         current_employee=current_employee,

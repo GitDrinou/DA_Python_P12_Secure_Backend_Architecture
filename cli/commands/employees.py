@@ -7,6 +7,7 @@ from security.permissions import (
     ROLE_SUPPORT,
 )
 from services.employee_service import EmployeeService
+from cli.interactions import prompt_if_missing, confirm_if_requested
 
 
 ROLE_CHOICES = click.Choice([
@@ -45,32 +46,23 @@ def list_employees(ctx):
 
 
 @cli.command("get", help="Display an employee.")
-@click.option("--employee-id", prompt=True, required=True)
+@click.option("--employee-id", required=False)
 @click.pass_context
 def get_employee(ctx, employee_id):
     require_permission(ctx, PERM_EMPLOYEES_READ_ALL)
+
+    employee_id = prompt_if_missing(employee_id, "Employee id")
+
     service = EmployeeService(ctx.obj["db_session"])
     employee = service.get_employee(employee_id)
     print_row(employee_to_dict(employee), title="Employee")
 
 
 @cli.command("create", help="Create an employee.")
-@click.option("--full-name", prompt=True, required=True)
-@click.option("--email", prompt=True, required=True)
-@click.option(
-    "--password",
-    prompt=True,
-    hide_input=True,
-    confirmation_prompt=True,
-    required=True,
-)
-@click.option(
-    "--role",
-    "role_name",
-    type=ROLE_CHOICES,
-    prompt=True,
-    required=True
-)
+@click.option("--full-name", required=False)
+@click.option("--email", required=False)
+@click.option("--password", required=False, hide_input=True)
+@click.option("--role", "role_name", type=ROLE_CHOICES, required=False)
 @click.option(
     "--inactive",
     is_flag=True,
@@ -80,6 +72,17 @@ def get_employee(ctx, employee_id):
 @click.pass_context
 def create_employee(ctx, full_name, email, password, role_name, inactive):
     current_employee = require_permission(ctx, PERM_EMPLOYEES_CREATE)
+
+    full_name = prompt_if_missing(full_name, "Full name")
+    email = prompt_if_missing(email, "Email")
+    if password is None:
+        password = click.prompt(
+            "Password",
+            hide_input=True,
+            confirmation_prompt=True,
+        )
+    role_name = prompt_if_missing(role_name, "Role", type=ROLE_CHOICES)
+
     service = EmployeeService(ctx.obj["db_session"])
     employee = service.create_employee(
         current_employee=current_employee,
@@ -95,7 +98,7 @@ def create_employee(ctx, full_name, email, password, role_name, inactive):
 
 
 @cli.command("update", help="Update an employee.")
-@click.option("--employee-id", prompt=True, required=True)
+@click.option("--employee-id", required=False)
 @click.option("--full-name", required=False)
 @click.option("--email", required=False)
 @click.option("--password", required=False, hide_input=True)
@@ -116,22 +119,24 @@ def update_employee(
         is_active
 ):
     current_employee = require_permission(ctx, PERM_EMPLOYEES_UPDATE)
+
+    employee_id = prompt_if_missing(employee_id, "Employee id")
+
     service = EmployeeService(ctx.obj["db_session"])
     current = service.get_employee(employee_id)
 
-    if full_name is None:
-        full_name = click.prompt(
-            "Full name",
-            default=current.full_name,
-            show_default=True
-        )
-
-    if email is None:
-        email = click.prompt(
-            "Email",
-            default=current.email,
-            show_default=True
-        )
+    full_name = prompt_if_missing(
+        full_name,
+        "Full name",
+        default=current.full_name,
+        show_default=True,
+    )
+    email = prompt_if_missing(
+        email,
+        "Email",
+        default=current.email,
+        show_default=True,
+    )
 
     if password is None:
         change_password = click.confirm("Change password?", default=False)
@@ -142,20 +147,19 @@ def update_employee(
                 confirmation_prompt=True,
             )
 
-    if role_name is None:
-        role_name = click.prompt(
-            "Role",
-            type=ROLE_CHOICES,
-            default=current.role.name,
-            show_default=True,
-        )
+    role_name = prompt_if_missing(
+        role_name,
+        "Role",
+        type=ROLE_CHOICES,
+        default=current.role.name,
+        show_default=True,
+    )
 
     if is_active is None:
-        is_active = "true" if current.is_active else "false"
         is_active = click.prompt(
             "Is active",
             type=click.Choice(["true", "false"]),
-            default=is_active,
+            default="true" if current.is_active else "false",
             show_default=True,
         )
 
@@ -174,13 +178,19 @@ def update_employee(
 
 
 @cli.command("delete", help="Delete an employee.")
-@click.option("--employee-id", prompt=True, required=True)
-@click.confirmation_option(
-    prompt="Do you really want to delete this employee ?"
+@click.option("--employee-id", required=False)
+@click.option(
+    "--yes",
+    is_flag=True,
+    help="Confirm deletion without interactive prompt.",
 )
 @click.pass_context
-def delete_employee(ctx, employee_id):
+def delete_employee(ctx, employee_id, yes):
     current_employee = require_permission(ctx, PERM_EMPLOYEES_DELETE)
+
+    employee_id = prompt_if_missing(employee_id, "Employee id")
+    confirm_if_requested(yes, "Do you really want to delete this employee ?")
+
     service = EmployeeService(ctx.obj["db_session"])
     service.delete_employee(
         current_employee=current_employee,

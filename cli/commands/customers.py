@@ -6,6 +6,7 @@ from security.permissions import (
     PERM_CUSTOMERS_UPDATE_OWNED, PERM_CUSTOMERS_DELETE_OWNED,
 )
 from services.customer_service import CustomerService
+from cli.interactions import prompt_if_missing, confirm_if_requested
 
 
 def customer_to_dict(customer):
@@ -38,23 +39,32 @@ def list_customers(ctx):
 
 
 @cli.command("get", help="Display a customer.")
-@click.option("--customer-id", prompt=True, required=True)
+@click.option("--customer-id", required=False)
 @click.pass_context
 def get_customer(ctx, customer_id):
     require_permission(ctx, PERM_CUSTOMERS_READ_ALL)
+
+    customer_id = prompt_if_missing(customer_id, "Customer id")
+
     service = CustomerService(ctx.obj["db_session"])
     customer = service.get_customer(customer_id)
     print_row(customer_to_dict(customer), title="Customer")
 
 
 @cli.command("create", help="Create a customer.")
-@click.option("--full-name", prompt=True, required=True)
-@click.option("--email", prompt=True, required=True)
-@click.option("--phone", prompt=True, required=True)
-@click.option("--company-name", prompt=True, required=True)
+@click.option("--full-name", required=False)
+@click.option("--email", required=False)
+@click.option("--phone", required=False)
+@click.option("--company-name", required=False)
 @click.pass_context
 def create_customer(ctx, full_name, email, phone, company_name):
     current_employee = require_permission(ctx, PERM_CUSTOMERS_CREATE_OWNED)
+
+    full_name = prompt_if_missing(full_name, "Full name")
+    email = prompt_if_missing(email, "Email")
+    phone = prompt_if_missing(phone, "Phone")
+    company_name = prompt_if_missing(company_name, "Company name")
+
     service = CustomerService(ctx.obj["db_session"])
     customer = service.create_customer(
         current_employee=current_employee,
@@ -69,7 +79,7 @@ def create_customer(ctx, full_name, email, phone, company_name):
 
 
 @cli.command("update", help="Update a customer.")
-@click.option("--customer-id", prompt=True, required=True)
+@click.option("--customer-id", required=False)
 @click.option("--full-name", required=False)
 @click.option("--email", required=False)
 @click.option("--phone", required=False)
@@ -77,33 +87,36 @@ def create_customer(ctx, full_name, email, phone, company_name):
 @click.pass_context
 def update_customer(ctx, customer_id, full_name, email, phone, company_name):
     current_employee = require_permission(ctx, PERM_CUSTOMERS_UPDATE_OWNED)
+
+    customer_id = prompt_if_missing(customer_id, "Customer id")
+
     service = CustomerService(ctx.obj["db_session"])
     current = service.get_customer(customer_id)
 
-    if full_name is None:
-        full_name = click.prompt(
-            "Full name",
-            default=current.full_name,
-            show_default=True,
-        )
-    if email is None:
-        email = click.prompt(
-            "Email",
-            default=current.email,
-            show_default=True,
-        )
-    if phone is None:
-        phone = click.prompt(
-            "Phone",
-            default=current.phone,
-            show_default=True,
-        )
-    if company_name is None:
-        company_name = click.prompt(
-            "Company name",
-            default=current.company_name,
-            show_default=True,
-        )
+    full_name = prompt_if_missing(
+        full_name,
+        "Full name",
+        default=current.full_name,
+        show_default=True,
+    )
+    email = prompt_if_missing(
+        email,
+        "Email",
+        default=current.email,
+        show_default=True,
+    )
+    phone = prompt_if_missing(
+        phone,
+        "Phone",
+        default=current.phone,
+        show_default=True,
+    )
+    company_name = prompt_if_missing(
+        company_name,
+        "Company name",
+        default=current.company_name,
+        show_default=True,
+    )
 
     customer = service.update_customer(
         current_employee=current_employee,
@@ -119,13 +132,22 @@ def update_customer(ctx, customer_id, full_name, email, phone, company_name):
 
 
 @cli.command("delete", help="Delete a customer.")
-@click.option("--customer-id", prompt=True, required=True)
-@click.confirmation_option(
-    prompt="Do you really want to delete this customer ?"
+@click.option("--customer-id", required=False)
+@click.option(
+    "--yes",
+    is_flag=True,
+    help="Confirm deletion without prompt.",
 )
 @click.pass_context
-def delete_customer(ctx, customer_id):
+def delete_customer(ctx, customer_id, yes):
     current_employee = require_permission(ctx, PERM_CUSTOMERS_DELETE_OWNED)
+
+    customer_id = prompt_if_missing(customer_id, "Customer id")
+    confirm_if_requested(
+        yes,
+        "Do you really want to delete this customer ?",
+    )
+
     service = CustomerService(ctx.obj["db_session"])
     service.delete_customer(
         current_employee=current_employee,
