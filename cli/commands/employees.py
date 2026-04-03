@@ -1,5 +1,6 @@
 import click
-from cli.printers import print_collection, print_row, print_success
+from cli.printers import print_collection, print_row, print_success, \
+    print_error
 from cli.validators import run_click_app, require_permission
 from security.permissions import (
     PERM_EMPLOYEES_READ_ALL, PERM_EMPLOYEES_CREATE, PERM_EMPLOYEES_UPDATE,
@@ -8,6 +9,7 @@ from security.permissions import (
 )
 from services.employee_service import EmployeeService
 from cli.interactions import prompt_if_missing, confirm_if_requested
+from security.passwords import validate_password_strength
 
 
 ROLE_CHOICES = click.Choice([
@@ -25,6 +27,32 @@ def employee_to_dict(employee):
         "role": employee.role.name if employee.role else None,
         "is_active": employee.is_active,
     }
+
+
+def validate_password_option(ctx, param, value):
+    if value is None:
+        return value
+
+    try:
+        validate_password_strength(value)
+    except ValueError as exc:
+        raise click.BadParameter(str(exc))
+
+    return value
+
+
+def prompt_password(label):
+    while True:
+        password = click.prompt(
+            label,
+            hide_input=True,
+            confirmation_prompt=True,
+        )
+        try:
+            validate_password_strength(password)
+            return password
+        except ValueError as exc:
+            print_error(str(exc))
 
 
 @click.group(help="Manage employees.")
@@ -61,7 +89,12 @@ def get_employee(ctx, employee_id):
 @cli.command("create", help="Create an employee.")
 @click.option("--full-name", required=False)
 @click.option("--email", required=False)
-@click.option("--password", required=False, hide_input=True)
+@click.option(
+    "--password",
+    required=False,
+    hide_input=True,
+    callback=validate_password_option,
+)
 @click.option("--role", "role_name", type=ROLE_CHOICES, required=False)
 @click.option(
     "--inactive",
@@ -76,11 +109,7 @@ def create_employee(ctx, full_name, email, password, role_name, inactive):
     full_name = prompt_if_missing(full_name, "Full name")
     email = prompt_if_missing(email, "Email")
     if password is None:
-        password = click.prompt(
-            "Password",
-            hide_input=True,
-            confirmation_prompt=True,
-        )
+        password = prompt_password("Password")
     role_name = prompt_if_missing(role_name, "Role", type=ROLE_CHOICES)
 
     service = EmployeeService(ctx.obj["db_session"])
@@ -101,7 +130,12 @@ def create_employee(ctx, full_name, email, password, role_name, inactive):
 @click.option("--employee-id", required=False)
 @click.option("--full-name", required=False)
 @click.option("--email", required=False)
-@click.option("--password", required=False, hide_input=True)
+@click.option(
+    "--password",
+    required=False,
+    hide_input=True,
+    callback=validate_password_option,
+)
 @click.option("--role", "role_name", type=ROLE_CHOICES, required=False)
 @click.option(
     "--is-active",
@@ -141,11 +175,7 @@ def update_employee(
     if password is None:
         change_password = click.confirm("Change password?", default=False)
         if change_password:
-            password = click.prompt(
-                "New password",
-                hide_input=True,
-                confirmation_prompt=True,
-            )
+            password = prompt_password("New password")
 
     role_name = prompt_if_missing(
         role_name,
