@@ -1,11 +1,31 @@
 import logging
 import os
+import re
 import sentry_sdk
 from sentry_sdk.integrations.logging import LoggingIntegration
+from sentry_sdk.scrubber import EventScrubber
+
 
 APP_LOGGER_NAME = "epic_events"
 AUDIT_LOGGER_NAME = "epic_events.audit"
 _OBSERVABILITY_INITIALIZED = False
+SENSITIVE_KEYS = {
+    "password",
+    "plain_password",
+    "password_hash",
+    "access_token",
+    "refresh_token",
+    "authorization",
+    "cookie",
+    "set-cookie",
+    "token",
+    "jwt",
+    "secret",
+    "api_key",
+}
+JWT_LIKE_RE = re.compile(
+    r"eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+"
+)
 
 
 class AuditLoggerAdapter(logging.LoggerAdapter):
@@ -23,6 +43,72 @@ class ExcludeAuditLogsFilter(logging.Filter):
 
     def filter(self, record: logging.LogRecord) -> bool:
         return not bool(getattr(record, "is_audit", False))
+
+
+def _mask_value(value):
+    if value is None:
+        return None
+
+    if isinstance(value, str):
+        if JWT_LIKE_RE.search(value):
+            return "[REDACTED]"
+        return value
+
+    if isinstance(value, dict):
+        return {
+            key: ("[REDACTED]"
+                  if str(key).lower() in SENSITIVE_KEYS else _mask_value(val))
+            for key, val in value.items()
+        }
+
+    if isinstance(value, list):
+        return [_mask_value(item) for item in value]
+
+    if isinstance(value, tuple):
+        return tuple(_mask_value(item) for item in value)
+
+    return value
+
+
+def _scrub_event_data(obj):
+    if isinstance(obj, dict):
+        cleaned = {}
+        for key, value in obj.items():
+            lowered = str(key).lower()
+            if lowered in SENSITIVE_KEYS:
+                cleaned[key] = "[REDACTED]"
+            else:
+                cleaned[key] = _scrub_event_data(value)
+        return cleaned
+
+    if isinstance(obj, list):
+        return [_scrub_event_data(item) for item in obj]
+
+    if isinstance(obj, tuple):
+        return tuple(_scrub_event_data(item) for item in obj)
+
+    if isinstance(obj, str):
+        if JWT_LIKE_RE.search(obj):
+            return "[REDACTED]"
+        return obj
+
+    return obj
+
+
+def _before_send(event, hint):
+    return _scrub_event_data(event)
+
+
+def _before_send_log(log, hint):
+    attrs = getattr(log, "attributes", None)
+    if isinstance(attrs, dict):
+        log.attributes = _scrub_event_data(attrs)
+
+    body = getattr(log, "body", None)
+    if isinstance(body, str) and JWT_LIKE_RE.search(body):
+        log.body = "[REDACTED]"
+
+    return log
 
 
 def init_observability() -> None:
@@ -48,6 +134,26 @@ def init_observability() -> None:
             integrations=[sentry_logging],
             enable_logs=True,
             send_default_pii=False,
+            include_local_variables=False,
+            traces_sample_rate=1.0,
+            event_scrubber=EventScrubber(
+                denylist=[
+                    "password",
+                    "plain_password",
+                    "password_hash",
+                    "access_token",
+                    "refresh_token",
+                    "authorization",
+                    "cookie",
+                    "set-cookie",
+                    "token",
+                    "jwt",
+                    "secret",
+                    "api_key",
+                ]
+            ),
+            before_send=_before_send,
+            before_send_log=_before_send_log,
         )
 
     _configure_audit_logger()
@@ -97,8 +203,7 @@ def _build_actor_extra(actor) -> dict:
 
     return {
         "actor_employee_id": getattr(actor, "employee_id", None),
-        "actor_email": getattr(actor, "email", None),
-        "actor_full_name": getattr(actor, "full_name", None),
+        "actor_role": getattr(getattr(actor, "role", None), "name", None),
     }
 
 
@@ -114,7 +219,6 @@ def log_employee_created(actor, employee) -> None:
             "entity_id": str(employee.employee_id),
             "employee_id": employee.employee_id,
             "employee_full_name": employee.full_name,
-            "employee_email": employee.email,
             "employee_role": employee.role.name if employee.role else None,
             "employee_is_active": employee.is_active,
         },
@@ -133,7 +237,6 @@ def log_employee_updated(actor, employee) -> None:
             "entity_id": str(employee.employee_id),
             "employee_id": employee.employee_id,
             "employee_full_name": employee.full_name,
-            "employee_email": employee.email,
             "employee_role": employee.role.name if employee.role else None,
             "employee_is_active": employee.is_active,
         },
