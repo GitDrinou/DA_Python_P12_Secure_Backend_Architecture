@@ -123,6 +123,10 @@ SENTRY_ENVIRONMENT=test
 Using a dedicated test database ensures that tests do not affect production 
 or development data
 
+## Database Schema
+The database schema for this project is available in the
+[following document](database/database_schema.pdf).
+
 ## Installation
 1. Clone the repository `git clone https://github.com/GitDrinou/DA_Python_P12_Secure_Backend_Architecture.git`
 2. Create a virtual environment by running the following lines in your terminal:
