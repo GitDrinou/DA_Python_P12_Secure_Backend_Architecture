@@ -71,24 +71,6 @@ Support users manage events assigned to them.
 5. Management assigns support 
 6. Support manages event
 
-## Installation
-1. Clone the repository `git clone https://github.com/GitDrinou/DA_Python_P12_Secure_Backend_Architecture.git`
-2. Create a virtual environment by running the following lines in your terminal:
-   - first, go the application's root directory
-   - check if you have access to venv: `python -m venv --help`
-   - create the environment with : `python -m venv env`
-   - activate the environment with:
-     - for MacOS/Linux: `source env/bin/activate`
-     - for Windows: `env\Scripts\activate`
-   - Install the required packages with : `pip install -r requirements.txt`
-3. Create your .env and .env-test files based on the examples below.
-4. Initialize the database with this command `python create_db.py`
-
-If you use ***pipenv***: 
-1. Install dependencies `pipenv install`
-2. Activate the virtual environment `pipenv shell`
-3. Create your .env and .env-test files based on the examples below.
-4. Initialize the database with this command `python create_db.py`
 
 ## Database Configuration
 The application requires 2 separate databases:
@@ -140,6 +122,26 @@ SENTRY_ENVIRONMENT=test
 ```
 Using a dedicated test database ensures that tests do not affect production 
 or development data
+
+## Installation
+1. Clone the repository `git clone https://github.com/GitDrinou/DA_Python_P12_Secure_Backend_Architecture.git`
+2. Create a virtual environment by running the following lines in your terminal:
+   - first, go the application's root directory
+   - check if you have access to venv: `python -m venv --help`
+   - create the environment with : `python -m venv env`
+   - activate the environment with:
+     - for MacOS/Linux: `source env/bin/activate`
+     - for Windows: `env\Scripts\activate`
+   - Install the required packages with : `pip install -r requirements.txt`
+3. Create your .env and .env-test files based on the examples above.
+4. Initialize the database with this command `python create_db.py`
+
+If you use ***pipenv***: 
+1. Install dependencies `pipenv install`
+2. Activate the virtual environment `pipenv shell`
+3. Create your .env and .env-test files based on the examples above.
+4. Initialize the database with this command `python create_db.py`
+
 
 ## Usage / CRM Commands
 ### Commands help
