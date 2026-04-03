@@ -73,11 +73,30 @@ Support users manage events assigned to them.
 
 ## Installation
 1. Clone the repository `git clone https://github.com/GitDrinou/DA_Python_P12_Secure_Backend_Architecture.git`
-2. Install dependencies `pipenv install`
-3. Activate the virtual environment `pipenv shell`
+2. Create a virtual environment by running the following lines in your terminal:
+   - first, go the application's root directory
+   - check if you have access to venv: `python -m venv --help`
+   - create the environment with : `python -m venv env`
+   - activate the environment with:
+     - for MacOS/Linux: `source env/bin/activate`
+     - for Windows: `env\Scripts\activate`
+   - Install the required packages with : `pip install -r requirements.txt`
+3. Create your .env and .env-test files based on the examples below.
+4. Initialize the database with this command `python create_db.py`
 
-## Configuration
-Create a `.env`file.
+If you use ***pipenv***: 
+1. Install dependencies `pipenv install`
+2. Activate the virtual environment `pipenv shell`
+3. Create your .env and .env-test files based on the examples below.
+4. Initialize the database with this command `python create_db.py`
+
+## Database Configuration
+The application requires 2 separate databases:
+- 1 database for the application
+- 1 database for tests
+### Environment variables
+Environment variables are managed using 2 files:
+- `.env` for application configuration
 
 Example:
 ```
@@ -93,12 +112,34 @@ ACCESS_TOKEN_EXPIRE_MINUTES=15
 JWT_ISSUER=epic-events-crm
 REFRESH_TOKEN_EXPIRE_DAYS=7
 
+SENTRY_DSN=my-sentry-dsn
+SENTRY_ENVIRONMENT=development
+SENTRY_RELEASE=epic-events-crm@1.0.0
+
 CRM_ADMIN_USER_EMAIL=admin@epic-events.com
 CRM_ADMIN_USER_PASSWORD=securepassword
 ```
+- `.env.test` for test configuration
 
-## Database initialization
-`python create_db.py`
+Example:
+```
+MYSQL_USER=your_db_user
+MYSQL_USER_PASSWORD=your_db_user_password
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_DATABASE=epic_events_test_db
+
+JWT_SECRET_KEY=your_secret_key
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=15
+JWT_ISSUER=epic-events-crm
+REFRESH_TOKEN_EXPIRE_DAYS=7
+
+SENTRY_DSN=
+SENTRY_ENVIRONMENT=test
+```
+Using a dedicated test database ensures that tests do not affect production 
+or development data
 
 ## Usage / CRM Commands
 ### Commands help
@@ -255,3 +296,13 @@ The project uses the following pytest options:
 - `--cov-report=wml`: generate XML coverage report
 
 Example: `pytest -v --cov --cov-report=term-missing --cov-report=html --cov-report=xml`
+
+## Code Quality
+This project follows strict code quality standards enforced with Flake8.
+Flake8 is used to ensure consistency, readability, and maintainability 
+across the codebase.
+
+Before committing changes, you should use the command: `flake8`
+
+If any issues are detected, they should be fixed before pushing code. This 
+helps maintain a clean and consistent codebase across contribution.
